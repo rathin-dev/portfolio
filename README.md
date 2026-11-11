@@ -29,6 +29,10 @@ Any static host works. On Vercel, import the folder as a new project with framew
 
 **Adding a project.** Mandli is the featured first project, in its own purple block (`<article class="mandli">`) at the top of Work. The other projects are the `<article class="project">` blocks after it: copy one, and alternate `project` and `project project--right` so the images zig-zag. Then update the `01 / 05` counters on every project, including Mandli's, and the "5 projects" line under "Selected work".
 
+**Smooth scrolling.** Mouse wheels, trackpads, Page Down, the space bar and in-page links glide instead of jumping. It is a few lines in `assets/js/main.js` (search for `Smooth scrolling`), with no library. The glide strength is the `0.085` in that block: lower feels floatier, higher feels snappier. Touch screens keep their own native scrolling, and it switches off for visitors who have reduced motion turned on.
+
+**Appear on scroll.** Add `class="reveal"` to any block to make it rise out of a soft blur when it scrolls into view. Add `data-split` to a heading to make its words rise one after another. `style="--d:.1s"` delays either one.
+
 **The blue line.** Elements with `data-thread="x,y x,y …"` add points to the line. `x` is a fraction of the page width (0 = left edge, 1 = right edge), and `y` is a fraction of that element's height. `data-thread-sm` is used instead on screens narrower than 900px. The line is rebuilt automatically when the layout changes.
 
 **Your photo.** The About section shows a halftone version of the Mandli app. To use a photo of yourself instead, replace the image inside `<div class="halftone">`. A photo on a plain background works best with the dot effect.

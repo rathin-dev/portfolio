@@ -1,14 +1,16 @@
 // Rathin Baraiya — portfolio.
 // Without this file every section is still visible and every link works.
-// It adds the blue line that draws itself down the page, the progress rail on
-// the right, the full-screen menu, and the motion.
+// It adds smooth (inertial) scrolling, the blue line that draws itself down the
+// page, the progress rail on the right, the full-screen menu, and the motion.
 (() => {
   const root = document.documentElement;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
   const clamp01 = (n) => Math.min(1, Math.max(0, n));
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
   $$('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
@@ -27,6 +29,171 @@
   });
   requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('loaded')));
 
+  // ── Headings marked data-split: wrap each word so it can rise from a mask ──
+  // Counters ([data-count]) and the rupee sign stay whole, as one unit each.
+  const splitWords = (el) => {
+    let i = 0;
+    const unit = () => {
+      const w = document.createElement('span');
+      w.className = 'w';
+      const wi = document.createElement('span');
+      wi.className = 'wi';
+      wi.style.setProperty('--i', i++);
+      w.append(wi);
+      return [w, wi];
+    };
+    const walk = (node) => {
+      [...node.childNodes].forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          if (!child.textContent.trim()) return;
+          const frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach((part) => {
+            if (!part) return;
+            if (!part.trim()) { frag.append(document.createTextNode(part)); return; }
+            const [w, wi] = unit();
+            wi.textContent = part;
+            frag.append(w);
+          });
+          child.replaceWith(frag);
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          if (child.hasAttribute('data-count')) {
+            const [w, wi] = unit();
+            child.replaceWith(w);
+            wi.append(child);
+          } else {
+            walk(child);
+          }
+        }
+      });
+    };
+    walk(el);
+  };
+  $$('[data-split]').forEach(splitWords);
+
+  // ── Smooth scrolling ──────────────────────────────────────────────────
+  // Mouse wheels and trackpads glide to a stop instead of jumping. Touch
+  // screens keep their own native momentum, and reduced motion turns it off.
+  const smooth = (() => {
+    if (reduce || !finePointer) return null;
+    root.style.scrollBehavior = 'auto';
+    let current = window.scrollY;
+    let target = current;
+    let running = false;
+    let locked = false;
+    let tween = null;
+    let last = 0;
+    const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const clampY = (y) => Math.min(maxY(), Math.max(0, y));
+
+    const frame = (now) => {
+      const dt = last ? Math.min(64, now - last) : 16.7;
+      last = now;
+      if (tween) {
+        const t = clamp01((now - tween.t0) / tween.dur);
+        current = tween.from + (tween.to - tween.from) * easeInOut(t);
+        if (t >= 1) { current = tween.to; target = tween.to; tween = null; }
+      } else {
+        // Ease towards the target; the same feel at 60 Hz and 120 Hz
+        current += (target - current) * (1 - Math.pow(1 - 0.085, dt / 16.7));
+        if (Math.abs(target - current) < 0.4) current = target;
+      }
+      window.scrollTo(0, current);
+      if (tween || current !== target) {
+        requestAnimationFrame(frame);
+      } else {
+        running = false;
+        last = 0;
+      }
+    };
+    const run = () => {
+      if (running) return;
+      running = true;
+      last = 0;
+      requestAnimationFrame(frame);
+    };
+
+    window.addEventListener('wheel', (e) => {
+      if (locked || e.ctrlKey || e.defaultPrevented) return; // ctrl + wheel is zoom
+      e.preventDefault();
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16;
+      else if (e.deltaMode === 2) dy *= window.innerHeight;
+      if (tween) { target = current; tween = null; }
+      target = clampY(target + dy);
+      run();
+    }, { passive: false });
+
+    // Stay in step with scrolling we did not start: scrollbar drag, find in page, focus
+    const sync = () => { if (!running) { current = window.scrollY; target = current; } };
+    window.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+
+    return {
+      to(y) {
+        const to = clampY(y);
+        const dist = Math.abs(to - current);
+        tween = { from: current, to, t0: performance.now(), dur: Math.min(1700, 650 + dist * 0.22) };
+        target = to;
+        run();
+      },
+      by(dy) {
+        if (tween) { target = current; tween = null; }
+        target = clampY(target + dy);
+        run();
+      },
+      lock(on) {
+        locked = on;
+        tween = null;
+        current = window.scrollY;
+        target = current;
+      },
+      get locked() { return locked; },
+    };
+  })();
+
+  // Page-down, space and arrow keys glide too, unless a control has focus
+  if (smooth) {
+    window.addEventListener('keydown', (e) => {
+      if (smooth.locked || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      const ae = document.activeElement;
+      const pageFocused = !ae || ae === document.body || ae === root || ae.getAttribute('tabindex') === '-1';
+      if (!pageFocused) return;
+      const page = window.innerHeight * 0.85;
+      let dy = 0;
+      switch (e.key) {
+        case 'ArrowDown': dy = 120; break;
+        case 'ArrowUp': dy = -120; break;
+        case 'PageDown': dy = page; break;
+        case 'PageUp': dy = -page; break;
+        case ' ': dy = e.shiftKey ? -page : page; break;
+        case 'Home': e.preventDefault(); smooth.to(0); return;
+        case 'End': e.preventDefault(); smooth.to(Infinity); return;
+        default: return;
+      }
+      e.preventDefault();
+      smooth.by(dy);
+    });
+  }
+
+  // In-page links glide to their section and take keyboard focus with them
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const id = a.getAttribute('href');
+    if (id.length < 2) return;
+    const el = document.querySelector(id);
+    if (!el) return;
+    e.preventDefault();
+    const y = id === '#top' ? 0 : el.getBoundingClientRect().top + window.scrollY;
+    if (smooth) smooth.to(y);
+    else window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+    history.pushState(null, '', id);
+    if (id !== '#top') {
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+      el.focus({ preventScroll: true });
+    }
+  });
+
   // ── Full-screen menu ──────────────────────────────────────────────────
   const menuBtn = $('.menu-btn');
   const menu = $('#menu');
@@ -37,6 +204,7 @@
     menu.inert = !open;
     root.classList.toggle('menu-open', open);
     document.body.style.overflow = open ? 'hidden' : '';
+    if (smooth) smooth.lock(open);
     if (open) setTimeout(() => menuLinks[0] && menuLinks[0].focus({ preventScroll: true }), 300);
   };
   menu.inert = true;
@@ -206,13 +374,20 @@
   // ── Scroll-linked updates ─────────────────────────────────────────────
   const updateFx = () => {
     fxEls.forEach((el) => {
-      if (reduce) { el.style.setProperty('--p', '.5'); el.style.setProperty('--q', '1'); return; }
+      if (reduce) {
+        el.style.setProperty('--p', '.5');
+        el.style.setProperty('--q', '1');
+        el.style.setProperty('--e', '0');
+        return;
+      }
       const r = el.getBoundingClientRect();
       // p: 0 as the element enters at the bottom, 1 as it leaves at the top.
       // q: reaches 1 when the element's middle is in the middle of the screen.
+      // e: 0 until the element's middle passes mid-screen, then 1 as it leaves.
       const p = clamp01((vh - r.top) / (vh + r.height));
-      el.style.setProperty('--p', p.toFixed(3));
-      el.style.setProperty('--q', clamp01(p * 2).toFixed(3));
+      el.style.setProperty('--p', p.toFixed(4));
+      el.style.setProperty('--q', clamp01(p * 2).toFixed(4));
+      el.style.setProperty('--e', clamp01((p - 0.5) * 2).toFixed(4));
     });
   };
 
@@ -272,8 +447,8 @@
     }
   });
 
-  // ── Reveals and counters ──────────────────────────────────────────────
-  const reveals = $$('.reveal');
+  // ── Appear on scroll, and counters ────────────────────────────────────
+  const appear = $$('.reveal, [data-split], .cloud');
   const counters = $$('[data-count]');
   const runCount = (el) => {
     const end = Number(el.dataset.count);
@@ -295,7 +470,7 @@
         io.unobserve(entry.target);
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
-    reveals.forEach((el) => io.observe(el));
+    appear.forEach((el) => io.observe(el));
 
     const countIo = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -306,7 +481,7 @@
     }, { threshold: 0.6 });
     counters.forEach((el) => countIo.observe(el));
   } else {
-    reveals.forEach((el) => el.classList.add('in'));
+    appear.forEach((el) => el.classList.add('in'));
   }
 
   // ── Copy email ────────────────────────────────────────────────────────

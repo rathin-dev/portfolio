@@ -67,7 +67,7 @@
 
   <main>
     <!-- 01 · Home -->
-    <section class="hero" id="top" data-hud="01|Home" data-tone="light" data-thread="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.75,0.98" data-thread-sm="1.03,0.56 0.5,0.62 0.025,0.72 0.025,0.99">
+    <section class="hero" id="top" data-hud="01|Home" data-tone="light" data-fx data-thread="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.75,0.98" data-thread-sm="1.03,0.56 0.5,0.62 0.025,0.72 0.025,0.99">
       <div class="hero-name-wrap">
         <h1 class="hero-name" aria-label="Rathin Baraiya"><span class="hero-line">Rathin</span> <span class="hero-line">Baraiya</span></h1>
       </div>
@@ -89,7 +89,7 @@
         </figure>
         <div class="about-text">
           <p class="mono label reveal">About</p>
-          <h2 class="reveal" style="--d:.05s">Independent web &amp; app developer</h2>
+          <h2 data-split>Independent web &amp; app developer</h2>
           <div class="reveal" style="--d:.1s">
             <p>I’m Rathin Baraiya, a developer from Gujarat with a B.Tech in Information Technology from Government Engineering College, Gandhinagar.</p>
             <p>My first project on the web was a blog. I built tecnews.in in college, got it approved for AdSense, ranked its gaming news on page&nbsp;1 of Google, and sold it in 2025.</p>
@@ -100,21 +100,21 @@
     </section>
 
     <!-- 03 · By the numbers -->
-    <section class="numbers" id="numbers" data-hud="03|By the numbers" data-tone="dark" data-thread="0.9,0.04 0.52,0.4 0.06,0.7 0.5,0.97" data-thread-sm="0.025,0.02 0.6,0.5 0.025,0.98">
+    <section class="numbers" id="numbers" data-hud="03|By the numbers" data-tone="dark" data-fx data-thread="0.9,0.04 0.52,0.4 0.06,0.7 0.5,0.97" data-thread-sm="0.025,0.02 0.6,0.5 0.025,0.98">
       <div class="wrap">
         <h2 class="mono label">By the numbers</h2>
         <ul class="numbers-grid">
           <li class="stat reveal">
             <span class="mono stat-label">Downloads on Google Play</span>
-            <span class="stat-value" aria-label="1K plus"><span data-count="1">1</span>K+</span>
+            <span class="stat-value" data-split aria-label="1K plus"><span data-count="1">1</span>K+</span>
           </li>
           <li class="stat reveal" style="--d:.1s">
             <span class="mono stat-label">Where my blog ranked on Google</span>
-            <span class="stat-value" aria-label="Page 1">Page <span data-count="1">1</span></span>
+            <span class="stat-value" data-split aria-label="Page 1">Page <span data-count="1">1</span></span>
           </li>
           <li class="stat reveal" style="--d:.2s">
             <span class="mono stat-label">What that blog sold for</span>
-            <span class="stat-value" aria-label="About 5 lakh rupees"><span class="rs">₹</span><span data-count="5">5</span>L</span>
+            <span class="stat-value" data-split aria-label="About 5 lakh rupees"><span class="rs">₹</span><span data-count="5">5</span>L</span>
           </li>
         </ul>
       </div>
@@ -123,10 +123,10 @@
     <!-- 04 · Journey -->
     <section class="journey" id="journey" data-hud="04|Journey" data-tone="light">
       <div class="wrap">
-        <h2 class="journey-title" data-fx data-thread="0.75,0.1 0.52,0.95" data-thread-sm="0.025,0.05 0.025,0.95"><span class="outline">The journey</span> <span class="so-far">so far</span></h2>
+        <h2 class="journey-title" data-fx data-split data-thread="0.75,0.1 0.52,0.95" data-thread-sm="0.025,0.05 0.025,0.95"><span class="outline">The journey</span> <span class="so-far">so far</span></h2>
         <ol class="milestones" data-thread="0.5,0.08 0.53,0.3 0.47,0.52 0.53,0.74 0.5,0.96" data-thread-sm="0.025,0.02 0.025,0.98">
           <li class="milestone">
-            <p class="milestone-mark reveal">2019</p>
+            <p class="milestone-mark" data-split>2019</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="10" y="6" width="44" height="28" rx="2"/><path d="M4 40h56l-4-6H8z"/><path d="M18 14h18M18 20h26M18 26h12"/></svg>
               <p class="mono label">Start</p>
@@ -134,7 +134,7 @@
             </div>
           </li>
           <li class="milestone">
-            <p class="milestone-mark reveal">2023</p>
+            <p class="milestone-mark" data-split>2023</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 18 32 6l28 12-28 12z"/><path d="M14 23v11c0 4 8 8 18 8s18-4 18-8V23"/><path d="M60 18v14"/></svg>
               <p class="mono label">Degree &amp; first job</p>
@@ -142,7 +142,7 @@
             </div>
           </li>
           <li class="milestone">
-            <p class="milestone-mark reveal">2025</p>
+            <p class="milestone-mark" data-split>2025</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M8 8h22l26 26-14 14L16 22z"/><circle cx="18" cy="18" r="3"/><path d="M31 25l8 8M27 29l6 6"/></svg>
               <p class="mono label">Exit</p>
@@ -150,7 +150,7 @@
             </div>
           </li>
           <li class="milestone">
-            <p class="milestone-mark reveal">2026</p>
+            <p class="milestone-mark" data-split>2026</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="22" y="2" width="20" height="44" rx="4"/><path d="M29 40h6"/><path d="M8 18h8M6 26h10M48 18h8M48 26h10"/></svg>
               <p class="mono label">Launch</p>
@@ -158,7 +158,7 @@
             </div>
           </li>
           <li class="milestone">
-            <p class="milestone-mark reveal">Now</p>
+            <p class="milestone-mark" data-split>Now</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 24h48"/><path d="m40 12 14 12-14 12"/></svg>
               <p class="mono label">Freelance</p>
@@ -170,10 +170,10 @@
     </section>
 
     <!-- 05 · What I do -->
-    <section class="services" id="services" data-hud="05|What I do" data-tone="dark" data-thread="0.97,0.06 0.06,0.4 0.62,0.56 0.97,0.72" data-thread-sm="0.025,0.03 0.9,0.25 0.025,0.5 0.025,0.98">
+    <section class="services" id="services" data-hud="05|What I do" data-tone="dark" data-fx data-thread="0.97,0.06 0.06,0.4 0.62,0.56 0.97,0.72" data-thread-sm="0.025,0.03 0.9,0.25 0.025,0.5 0.025,0.98">
       <div class="stars" aria-hidden="true"></div>
       <div class="wrap">
-        <h2 class="services-title reveal">What I do</h2>
+        <h2 class="services-title" data-split>What I do</h2>
         <ul class="cloud" data-fx aria-label="Services">
           <li style="--x:7%;  --y:4%;  --s:clamp(46px, 6.2vw, 96px); --depth:90">Websites</li>
           <li style="--x:58%; --y:1%;  --s:clamp(36px, 4.4vw, 68px); --depth:-70">Android apps</li>
@@ -195,17 +195,17 @@
     <!-- 06 · Work -->
     <section class="work" id="work" data-hud="06|Work" data-tone="light">
       <div class="work-head" data-thread="0.86,0.12 0.2,0.86" data-thread-sm="0.025,0.1 0.6,0.5 0.025,0.95">
-        <h2 class="work-title" data-fx><span>Selected</span> <span>Work</span></h2>
+        <h2 class="work-title" data-fx data-split><span>Selected</span> <span>Work</span></h2>
         <p class="mono work-count">My app, client work &amp; my first venture · 5 projects</p>
       </div>
 
       <!-- 01 · Mandli, the featured project -->
-      <article class="mandli" id="mandli" data-tone="dark" data-thread="0.02,0.08 0.03,0.6 0.45,0.98" data-thread-sm="0.025,0.03 0.025,0.97">
+      <article class="mandli" id="mandli" data-tone="dark" data-fx data-thread="0.02,0.08 0.03,0.6 0.45,0.98" data-thread-sm="0.025,0.03 0.025,0.97">
         <div class="wrap mandli-grid">
           <div class="mandli-copy">
             <p class="mono feature-num reveal">01 / 05 · Featured project</p>
             <p class="mandli-brand reveal"><span class="pill">My product</span><img src="assets/img/mandli-icon.webp" width="192" height="192" alt="" class="mandli-icon"><span class="mandli-word">Mandli</span></p>
-            <h3 class="mandli-title reveal" style="--d:.05s">The digital record book for <em>savings</em> groups.</h3>
+            <h3 class="mandli-title" data-split>The digital record book for <em>savings</em> groups.</h3>
             <p class="reveal" style="--d:.1s">A mandal is a savings group: members put in money every month, lend to each other at interest, and share the returns. Mandli replaces the handwritten ledger with an app the whole group can see, and works out the interest on its own.</p>
             <ul class="mandli-points reveal" style="--d:.12s">
               <li>Contributions, loans, interest and payouts worked out automatically</li>
@@ -231,12 +231,12 @@
       <div class="wrap">
         <article class="project" data-thread="0.84,0.24 0.8,0.82" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
-            <a class="project-media reveal" href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+            <a class="project-media reveal" data-fx href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
               <img src="assets/img/rescue-desktop.webp" width="1440" height="900" alt="" loading="lazy">
             </a>
             <div class="project-info reveal">
               <p class="mono project-num">02 / 05</p>
-              <h3 class="project-title">Rescue Foundation Gujarat</h3>
+              <h3 class="project-title" data-split>Rescue Foundation Gujarat</h3>
               <p class="project-sub">Helpline-first website for an animal-rescue trust</p>
               <p class="project-desc">An emergency tool first, a donation site second: call and WhatsApp are one tap away on every page, even if the scripts fail to load. A custom WordPress theme, built from scratch, with a volunteer form and rescue videos that sync from YouTube.</p>
               <p class="mono project-tags">WordPress · PHP · Vite · JavaScript</p>
@@ -247,12 +247,12 @@
 
         <article class="project project--right" data-thread="0.16,0.2 0.12,0.8" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
-            <a class="project-media reveal" href="https://vanisth.com/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+            <a class="project-media reveal" data-fx href="https://vanisth.com/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
               <img src="assets/img/vanisth.webp" width="1440" height="900" alt="" loading="lazy">
             </a>
             <div class="project-info reveal">
               <p class="mono project-num">03 / 05</p>
-              <h3 class="project-title">Vanisth</h3>
+              <h3 class="project-title" data-split>Vanisth</h3>
               <p class="project-sub">Online shop for a raw-honey brand</p>
               <p class="project-desc">A WooCommerce store for Vanisth’s raw honeys, each sold in different jar sizes, with cart and checkout. A custom theme that gives every jar its own batch certificate is in the works.</p>
               <p class="mono project-tags">WordPress · WooCommerce</p>
@@ -263,12 +263,12 @@
 
         <article class="project" data-thread="0.86,0.22 0.82,0.84" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
-            <a class="project-media reveal" href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+            <a class="project-media reveal" data-fx href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
               <img src="assets/img/rk-album.webp" width="1440" height="900" alt="" loading="lazy">
             </a>
             <div class="project-info reveal">
               <p class="mono project-num">04 / 05</p>
-              <h3 class="project-title">RK Creation</h3>
+              <h3 class="project-title" data-split>RK Creation</h3>
               <p class="project-sub">Website for a photography studio in Bhavnagar</p>
               <p class="project-desc">241 photographs in 14 galleries, a wedding album that opens as you scroll, shortlists couples can share with family, and bookings that go straight to WhatsApp.</p>
               <p class="mono project-tags">Next.js · React · TypeScript · Tailwind CSS</p>
@@ -286,7 +286,7 @@
             </div>
             <div class="project-info reveal">
               <p class="mono project-num">05 / 05</p>
-              <h3 class="project-title">tecnews.in</h3>
+              <h3 class="project-title" data-split>tecnews.in</h3>
               <p class="project-sub">Tech blog, built in college and sold in 2025</p>
               <p class="project-desc">My first venture. I set up the site and grew it until Google approved it for AdSense and its gaming news reached page 1 of Google. In 2025 I sold it for around ₹5 lakh.</p>
               <p class="mono project-tags">WordPress · SEO · AdSense</p>
@@ -297,9 +297,9 @@
     </section>
 
     <!-- 07 · Contact -->
-    <section class="contact" id="contact" data-hud="07|Contact" data-tone="light" data-thread="0.1,0.3 0.48,0.16 0.83,0.25" data-thread-sm="0.025,0.22 0.45,0.1 0.86,0.16">
-      <svg class="plane" viewBox="0 0 100 80" aria-hidden="true"><path class="plane-body" d="M4 36 96 4 70 74 48 50z"/><path class="plane-fold" d="M96 4 48 50l-6 22 12-16"/></svg>
-      <h2 class="contact-title reveal">Let’s build somethin<span class="hop">g</span></h2>
+    <section class="contact" id="contact" data-hud="07|Contact" data-tone="light" data-fx data-thread="0.1,0.3 0.48,0.16 0.83,0.25" data-thread-sm="0.025,0.22 0.45,0.1 0.86,0.16">
+      <svg class="plane" viewBox="0 0 100 80" aria-hidden="true"><g class="plane-g"><path class="plane-body" d="M4 36 96 4 70 74 48 50z"/><path class="plane-fold" d="M96 4 48 50l-6 22 12-16"/></g></svg>
+      <h2 class="contact-title" data-split>Let’s build somethin<span class="hop">g</span></h2>
       <div class="contact-email-row reveal" style="--d:.08s">
         <a class="contact-email" href="mailto:rathin2308@gmail.com?subject=Project%20enquiry">rathin2308@gmail.com</a>
         <button class="copy-btn mono" type="button" data-copy="rathin2308@gmail.com"><span data-copy-label>Copy email</span></button>
