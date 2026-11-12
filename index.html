@@ -25,13 +25,11 @@
 <body>
   <a class="skip mono" href="#about">Skip to content</a>
 
-  <!-- The blue line that draws itself down the page as you scroll (built by main.js) -->
+  <!-- The blue line that draws itself down the page as you scroll. main.js draws
+       it here, over the document, except while a scene is pinned: that scene's
+       piece of the line is drawn inside the scene itself. -->
   <svg class="thread" aria-hidden="true" focusable="false">
     <defs><clipPath id="thread-dark"></clipPath></defs>
-    <path class="thread-ghost"/>
-    <path class="thread-line"/>
-    <path class="thread-line thread-line--light" clip-path="url(#thread-dark)"/>
-    <g class="thread-head"><circle class="thread-halo" r="9"/><circle r="3.5"/></g>
   </svg>
 
   <header class="site-header">
@@ -66,26 +64,40 @@
   </div>
 
   <main>
-    <!-- 01 · Home -->
-    <section class="hero" id="top" data-hud="01|Home" data-tone="light" data-fx data-thread="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.75,0.98" data-thread-sm="1.03,0.56 0.5,0.62 0.025,0.72 0.025,0.99">
-      <div class="hero-name-wrap">
-        <h1 class="hero-name" aria-label="Rathin Baraiya"><span class="hero-line">Rathin</span> <span class="hero-line">Baraiya</span></h1>
-      </div>
-      <div class="hero-bottom">
-        <div class="hero-intro">
-          <p class="mono hero-kicker">Web &amp; app developer · Gujarat, India</p>
-          <p>Websites, online shops and Android apps for small businesses, community groups and non-profits. Designed, built and launched.</p>
+    <!-- Scenes. Each <section class="scene" data-pin> is taller than the screen and
+         its .stage stays pinned while it scrolls past; the next scene rises over
+         the last screen of it as a card. Blue-line routes: data-thread-scene is used
+         while pinned (fractions of the stage), data-thread when it is not
+         (see "The blue line" in main.js). -->
+
+    <!-- 01 · Home: the camera flies between the two words of the name -->
+    <section class="scene scene--hero" id="top" data-hud="01|Home" data-tone="light" data-pin data-sweep=".86">
+      <div class="stage hero"
+           data-thread-scene="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.78,0.64 0.59,0.694 0.486,0.733 0.46,0.791 0.456,0.878 0.456,1.02"
+           data-thread-scene-sm="1.03,0.56 0.5,0.62 0.12,0.68 0.035,0.74 0.025,0.82 0.025,1.02"
+           data-thread="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.75,0.98"
+           data-thread-sm="1.03,0.56 0.5,0.62 0.025,0.72 0.025,0.99">
+        <div class="hero-name-wrap">
+          <h1 class="hero-name" aria-label="Rathin Baraiya"><span class="hero-line hero-line--a">Rathin</span> <span class="hero-line hero-line--b">Baraiya</span></h1>
         </div>
-        <a class="scroll-cue mono" href="#about">Scroll</a>
+        <div class="hero-bottom">
+          <div class="hero-intro">
+            <p class="mono hero-kicker">Web &amp; app developer · Gujarat, India</p>
+            <p>Websites, online shops and Android apps for small businesses, community groups and non-profits. Designed, built and launched.</p>
+          </div>
+          <a class="scroll-cue mono" href="#about">Scroll</a>
+        </div>
       </div>
     </section>
 
     <!-- 02 · About -->
-    <section class="about" id="about" data-hud="02|About" data-tone="light" data-thread="0.47,0.06 0.456,0.5 0.46,0.97" data-thread-sm="0.025,0.02 0.025,0.98">
+    <section class="scene scene--about" id="about" data-hud="02|About" data-tone="light" data-pin>
+      <div class="stage stage--card about" data-fx
+           data-thread-scene="0.456,-0.02 0.47,0.3 0.445,0.7 0.456,1.02"
+           data-thread="0.456,0.06 0.456,0.5 0.46,0.97" data-thread-sm="0.025,0.02 0.025,0.98">
       <div class="wrap about-grid">
         <figure class="about-figure reveal">
-          <div class="halftone"><img src="assets/img/mandli-app-home.webp" width="560" height="1244" alt="Home screen of Mandli, the savings-group app I built and published on Google Play" loading="lazy"></div>
-          <figcaption class="mono">Mandli · my app on Google Play</figcaption>
+          <div class="halftone"><img src="assets/img/rathin-halftone.webp" width="760" height="685" alt="Portrait of Rathin Baraiya, smiling" loading="lazy"></div>
         </figure>
         <div class="about-text">
           <p class="mono label reveal">About</p>
@@ -97,35 +109,42 @@
           </div>
         </div>
       </div>
+      </div>
     </section>
 
     <!-- 03 · By the numbers -->
-    <section class="numbers" id="numbers" data-hud="03|By the numbers" data-tone="dark" data-fx data-thread="0.9,0.04 0.52,0.4 0.06,0.7 0.5,0.97" data-thread-sm="0.025,0.02 0.6,0.5 0.025,0.98">
+    <section class="scene scene--numbers" id="numbers" data-hud="03|By the numbers" data-tone="dark" data-pin>
+      <div class="stage stage--card numbers" data-fx
+           data-thread-scene="0.456,-0.02 0.5,0.3 0.66,0.5 0.93,0.62 0.92,1.02"
+           data-thread="0.47,0.03 0.52,0.22 0.5,0.4 0.3,0.6 0.08,0.71 0.5,0.97" data-thread-sm="0.025,0.02 0.025,0.98">
       <div class="wrap">
         <h2 class="mono label">By the numbers</h2>
         <ul class="numbers-grid">
-          <li class="stat reveal">
+          <li class="stat reveal" data-fx>
             <span class="mono stat-label">Downloads on Google Play</span>
             <span class="stat-value" data-split aria-label="1K plus"><span data-count="1">1</span>K+</span>
           </li>
-          <li class="stat reveal" style="--d:.1s">
+          <li class="stat reveal" data-fx style="--d:.1s">
             <span class="mono stat-label">Where my blog ranked on Google</span>
             <span class="stat-value" data-split aria-label="Page 1">Page <span data-count="1">1</span></span>
           </li>
-          <li class="stat reveal" style="--d:.2s">
+          <li class="stat reveal" data-fx style="--d:.2s">
             <span class="mono stat-label">What that blog sold for</span>
             <span class="stat-value" data-split aria-label="About 5 lakh rupees"><span class="rs">₹</span><span data-count="5">5</span>L</span>
           </li>
         </ul>
       </div>
+      </div>
     </section>
 
-    <!-- 04 · Journey -->
-    <section class="journey" id="journey" data-hud="04|Journey" data-tone="light">
+    <!-- 04 · Journey: while pinned, the years come and go one at a time -->
+    <section class="scene scene--journey" id="journey" data-hud="04|Journey" data-tone="light" data-pin data-sweep=".42">
+      <div class="stage stage--card journey"
+           data-thread-scene="0.92,-0.02 0.92,0.1 0.87,0.22 0.7,0.33 0.53,0.42 0.51,0.6 0.5,0.8 0.5,1.02">
       <div class="wrap">
-        <h2 class="journey-title" data-fx data-split data-thread="0.75,0.1 0.52,0.95" data-thread-sm="0.025,0.05 0.025,0.95"><span class="outline">The journey</span> <span class="so-far">so far</span></h2>
+        <div class="journey-head" data-fx data-thread="0.75,0.1 0.52,0.95" data-thread-sm="0.025,0.05 0.025,0.95"><h2 class="journey-title" data-split><span class="outline">The journey</span> <span class="so-far">so far</span></h2></div>
         <ol class="milestones" data-thread="0.5,0.08 0.53,0.3 0.47,0.52 0.53,0.74 0.5,0.96" data-thread-sm="0.025,0.02 0.025,0.98">
-          <li class="milestone">
+          <li class="milestone" data-fx>
             <p class="milestone-mark" data-split>2019</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="10" y="6" width="44" height="28" rx="2"/><path d="M4 40h56l-4-6H8z"/><path d="M18 14h18M18 20h26M18 26h12"/></svg>
@@ -133,7 +152,7 @@
               <p>Started a B.Tech in Information Technology at GEC Gandhinagar. In college I also started tecnews.in, a tech blog on WordPress.</p>
             </div>
           </li>
-          <li class="milestone">
+          <li class="milestone" data-fx>
             <p class="milestone-mark" data-split>2023</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 18 32 6l28 12-28 12z"/><path d="M14 23v11c0 4 8 8 18 8s18-4 18-8V23"/><path d="M60 18v14"/></svg>
@@ -141,7 +160,7 @@
               <p>Full stack developer at InfoLabz from January to June 2023, and finished my B.Tech in Information Technology.</p>
             </div>
           </li>
-          <li class="milestone">
+          <li class="milestone" data-fx>
             <p class="milestone-mark" data-split>2025</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M8 8h22l26 26-14 14L16 22z"/><circle cx="18" cy="18" r="3"/><path d="M31 25l8 8M27 29l6 6"/></svg>
@@ -149,7 +168,7 @@
               <p>Sold tecnews.in for around ₹5 lakh, after Google approved it for AdSense and its gaming news reached page 1.</p>
             </div>
           </li>
-          <li class="milestone">
+          <li class="milestone" data-fx>
             <p class="milestone-mark" data-split>2026</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="22" y="2" width="20" height="44" rx="4"/><path d="M29 40h6"/><path d="M8 18h8M6 26h10M48 18h8M48 26h10"/></svg>
@@ -157,7 +176,7 @@
               <p>Put Mandli on Google Play, and built websites for an animal-rescue trust, a photography studio and a honey brand.</p>
             </div>
           </li>
-          <li class="milestone">
+          <li class="milestone" data-fx>
             <p class="milestone-mark" data-split>Now</p>
             <div class="milestone-body reveal" style="--d:.1s">
               <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 24h48"/><path d="m40 12 14 12-14 12"/></svg>
@@ -167,22 +186,27 @@
           </li>
         </ol>
       </div>
+      </div>
     </section>
 
     <!-- 05 · What I do -->
-    <section class="services" id="services" data-hud="05|What I do" data-tone="dark" data-fx data-thread="0.97,0.06 0.06,0.4 0.62,0.56 0.97,0.72" data-thread-sm="0.025,0.03 0.9,0.25 0.025,0.5 0.025,0.98">
+    <section class="scene scene--services" id="services" data-hud="05|What I do" data-tone="dark" data-pin>
+      <div class="stage stage--card services" data-fx
+           data-thread-scene="0.5,-0.02 0.5,0.06 0.42,0.11 0.22,0.14 0.1,0.2 0.075,0.29 0.12,0.37 0.3,0.43 0.62,0.55 0.3,0.59 0.09,0.61 0.035,0.65 0.025,0.75 0.025,1.02"
+           data-thread="0.92,0.06" data-thread-sm="0.025,0.03">
       <div class="stars" aria-hidden="true"></div>
       <div class="wrap">
         <h2 class="services-title" data-split>What I do</h2>
-        <ul class="cloud" data-fx aria-label="Services">
-          <li style="--x:7%;  --y:4%;  --s:clamp(46px, 6.2vw, 96px); --depth:90">Websites</li>
-          <li style="--x:58%; --y:1%;  --s:clamp(36px, 4.4vw, 68px); --depth:-70">Android apps</li>
-          <li style="--x:30%; --y:31%; --s:clamp(30px, 3.4vw, 54px); --depth:40">Online shops</li>
-          <li style="--x:77%; --y:27%; --s:clamp(54px, 7.4vw, 116px); --depth:-110">SEO</li>
-          <li style="--x:56%; --y:54%; --s:clamp(32px, 3.8vw, 60px); --depth:60">Admin dashboards</li>
-          <li style="--x:4%;  --y:76%; --s:clamp(42px, 5.6vw, 88px); --depth:-40">Hosting &amp; launch</li>
+        <ul class="cloud" data-fx aria-label="Services" data-thread="0.06,0.22 0.62,0.6 0.3,0.8 0.1,0.9 0.04,0.96" data-thread-sm="">
+          <!-- --z: how far away each word starts (it flies in from that depth); --ry: its starting turn -->
+          <li style="--x:7%;  --y:4%;  --s:clamp(46px, 6.2vw, 96px); --depth:90;   --z:-520px;  --ry:26deg">Websites</li>
+          <li style="--x:58%; --y:1%;  --s:clamp(36px, 4.4vw, 68px); --depth:-70;  --z:-900px;  --ry:-22deg">Android apps</li>
+          <li style="--x:30%; --y:31%; --s:clamp(30px, 3.4vw, 54px); --depth:40;   --z:-1300px; --ry:18deg">Online shops</li>
+          <li style="--x:77%; --y:27%; --s:clamp(54px, 7.4vw, 116px); --depth:-110; --z:-420px;  --ry:-30deg">SEO</li>
+          <li style="--x:56%; --y:54%; --s:clamp(32px, 3.8vw, 60px); --depth:60;   --z:-1100px; --ry:-16deg">Admin dashboards</li>
+          <li style="--x:4%;  --y:76%; --s:clamp(42px, 5.6vw, 88px); --depth:-40;  --z:-700px;  --ry:24deg">Hosting &amp; launch</li>
         </ul>
-        <dl class="services-detail">
+        <dl class="services-detail" data-thread="0.025,0.5 0.025,1.75" data-thread-sm="0.025,0.5 0.025,1.02">
           <div class="reveal"><dt class="mono">Websites</dt><dd>Business sites, NGO sites and studio portfolios, hand-built on WordPress or Next.js and quick on a basic phone.</dd></div>
           <div class="reveal" style="--d:.06s"><dt class="mono">Android apps</dt><dd>Flutter apps with sign-in, live data, notifications and PDF reports, taken all the way through Play Store review.</dd></div>
           <div class="reveal" style="--d:.12s"><dt class="mono">Online shops</dt><dd>WooCommerce stores with products, sizes, cart and checkout, ready to take orders.</dd></div>
@@ -190,17 +214,24 @@
         </dl>
         <p class="mono how reveal">How I work: Understand <span aria-hidden="true">→</span> Build <span aria-hidden="true">→</span> Launch <span aria-hidden="true">→</span> Support</p>
       </div>
+      </div>
     </section>
 
     <!-- 06 · Work -->
     <section class="work" id="work" data-hud="06|Work" data-tone="light">
-      <div class="work-head" data-thread="0.86,0.12 0.2,0.86" data-thread-sm="0.025,0.1 0.6,0.5 0.025,0.95">
-        <h2 class="work-title" data-fx data-split><span>Selected</span> <span>Work</span></h2>
-        <p class="mono work-count">My app, client work &amp; my first venture · 5 projects</p>
+      <!-- Pinned like the hero: the title arrives from far away, then the camera flies through it -->
+      <div class="work-pin" data-fx data-pin>
+        <div class="stage stage--card work-head"
+             data-thread-scene="-0.03,0.1 0.1,0.13 0.3,0.15 0.6,0.16 0.9,0.3 0.5,0.6 0.21,0.694 0.083,0.742 0.042,0.778 0.028,0.828 0.025,0.889 0.025,1.02"
+             data-thread-scene-sm="0.025,-0.02 0.3,0.12 0.6,0.3 0.3,0.48 0.09,0.58 0.03,0.68 0.025,0.78 0.025,1.02"
+             data-thread="0.86,0.12 0.2,0.86" data-thread-sm="0.025,0.1 0.6,0.5 0.025,0.95">
+          <h2 class="work-title"><span>Selected</span> <span>Work</span></h2>
+          <p class="mono work-count">My app, client work &amp; my first venture · 5 projects</p>
+        </div>
       </div>
 
       <!-- 01 · Mandli, the featured project -->
-      <article class="mandli" id="mandli" data-tone="dark" data-fx data-thread="0.02,0.08 0.03,0.6 0.45,0.98" data-thread-sm="0.025,0.03 0.025,0.97">
+      <article class="mandli" id="mandli" data-tone="dark" data-fx data-thread="0.02,0.08 0.03,0.6 0.035,0.94 0.32,0.995" data-thread-sm="0.025,0.03 0.025,0.97">
         <div class="wrap mandli-grid">
           <div class="mandli-copy">
             <p class="mono feature-num reveal">01 / 05 · Featured project</p>
@@ -229,9 +260,9 @@
       </article>
 
       <div class="wrap">
-        <article class="project" data-thread="0.84,0.24 0.8,0.82" data-thread-sm="0.025,0.05 0.025,0.95">
+        <article class="project" data-fx data-thread="0.88,0.03 0.86,0.5 0.8,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
-            <a class="project-media reveal" data-fx href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+            <a class="project-media reveal" href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
               <img src="assets/img/rescue-desktop.webp" width="1440" height="900" alt="" loading="lazy">
             </a>
             <div class="project-info reveal">
@@ -245,9 +276,9 @@
           </div>
         </article>
 
-        <article class="project project--right" data-thread="0.16,0.2 0.12,0.8" data-thread-sm="0.025,0.05 0.025,0.95">
+        <article class="project project--right" data-fx data-thread="0.14,0.03 0.12,0.5 0.18,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
-            <a class="project-media reveal" data-fx href="https://vanisth.com/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+            <a class="project-media reveal" href="https://vanisth.com/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
               <img src="assets/img/vanisth.webp" width="1440" height="900" alt="" loading="lazy">
             </a>
             <div class="project-info reveal">
@@ -261,9 +292,9 @@
           </div>
         </article>
 
-        <article class="project" data-thread="0.86,0.22 0.82,0.84" data-thread-sm="0.025,0.05 0.025,0.95">
+        <article class="project" data-fx data-thread="0.88,0.03 0.86,0.5 0.8,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
-            <a class="project-media reveal" data-fx href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+            <a class="project-media reveal" href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
               <img src="assets/img/rk-album.webp" width="1440" height="900" alt="" loading="lazy">
             </a>
             <div class="project-info reveal">
@@ -277,7 +308,7 @@
           </div>
         </article>
 
-        <article class="project project--right" data-thread="0.16,0.22 0.14,0.9" data-thread-sm="0.025,0.05 0.025,0.95">
+        <article class="project project--right" data-fx data-thread="0.14,0.03 0.12,0.5 0.2,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
           <div class="project-inner">
             <div class="project-media tec-card reveal" aria-hidden="true">
               <span class="tec-name">tecnews.in</span>
@@ -297,7 +328,7 @@
     </section>
 
     <!-- 07 · Contact -->
-    <section class="contact" id="contact" data-hud="07|Contact" data-tone="light" data-fx data-thread="0.1,0.3 0.48,0.16 0.83,0.25" data-thread-sm="0.025,0.22 0.45,0.1 0.86,0.16">
+    <section class="contact" id="contact" data-hud="07|Contact" data-tone="light" data-fx data-thread="0.1,0.3 0.48,0.16 0.83,0.25" data-thread-sm="0.025,0.06 0.025,0.12 0.035,0.16 0.1,0.19 0.28,0.2 0.56,0.17 0.85,0.155">
       <svg class="plane" viewBox="0 0 100 80" aria-hidden="true"><g class="plane-g"><path class="plane-body" d="M4 36 96 4 70 74 48 50z"/><path class="plane-fold" d="M96 4 48 50l-6 22 12-16"/></g></svg>
       <h2 class="contact-title" data-split>Let’s build somethin<span class="hop">g</span></h2>
       <div class="contact-email-row reveal" style="--d:.08s">
