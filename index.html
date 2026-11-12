@@ -25,13 +25,6 @@
 <body>
   <a class="skip mono" href="#about">Skip to content</a>
 
-  <!-- The blue line that draws itself down the page as you scroll. main.js draws
-       it here, over the document, except while a scene is pinned: that scene's
-       piece of the line is drawn inside the scene itself. -->
-  <svg class="thread" aria-hidden="true" focusable="false">
-    <defs><clipPath id="thread-dark"></clipPath></defs>
-  </svg>
-
   <header class="site-header">
     <a class="brand" href="#top">Rathin Baraiya</a>
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu">
@@ -54,7 +47,7 @@
     </p>
   </nav>
 
-  <!-- Section progress on the right edge (positions filled in by main.js) -->
+  <!-- Progress on the right edge (filled in by main.js) -->
   <div class="hud" aria-hidden="true">
     <div class="hud-track"></div>
     <div class="hud-fill"></div>
@@ -63,280 +56,270 @@
     <p class="hud-label mono"><span class="hud-num">01</span><span class="hud-name">Home</span></p>
   </div>
 
-  <main>
-    <!-- Scenes. Each <section class="scene" data-pin> is taller than the screen and
-         its .stage stays pinned while it scrolls past; the next scene rises over
-         the last screen of it as a card. Blue-line routes: data-thread-scene is used
-         while pinned (fractions of the stage), data-thread when it is not
-         (see "The blue line" in main.js). -->
+  <!-- The blue line: a 3D curve through every stop, drawn here by main.js -->
+  <canvas class="line" aria-hidden="true"></canvas>
 
-    <!-- 01 · Home: the camera flies between the two words of the name -->
-    <section class="scene scene--hero" id="top" data-hud="01|Home" data-tone="light" data-pin data-sweep=".86">
-      <div class="stage hero"
-           data-thread-scene="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.78,0.64 0.59,0.694 0.486,0.733 0.46,0.791 0.456,0.878 0.456,1.02"
-           data-thread-scene-sm="1.03,0.56 0.5,0.62 0.12,0.68 0.035,0.74 0.025,0.82 0.025,1.02"
-           data-thread="-0.03,0.66 0.32,0.66 0.7,0.57 0.97,0.45 0.75,0.98"
-           data-thread-sm="1.03,0.56 0.5,0.62 0.025,0.72 0.025,0.99">
-        <div class="hero-name-wrap">
-          <h1 class="hero-name" aria-label="Rathin Baraiya"><span class="hero-line hero-line--a">Rathin</span> <span class="hero-line hero-line--b">Baraiya</span></h1>
-        </div>
-        <div class="hero-bottom">
-          <div class="hero-intro">
-            <p class="mono hero-kicker">Web &amp; app developer · Gujarat, India</p>
-            <p>Websites, online shops and Android apps for small businesses, community groups and non-profits. Designed, built and launched.</p>
-          </div>
-          <a class="scroll-cue mono" href="#about">Scroll</a>
-        </div>
+  <!--
+    The page is a row of stops along the blue line. With motion allowed, main.js
+    turns it into a 3D world: scrolling flies a camera along the line, and each
+    stop's pieces float around it. Without that (reduced motion, no JavaScript)
+    the same stops are an ordinary page.
+
+    On a stop (<section data-stop>):
+      data-line   where the line passes this stop: "x,y" from the middle of the
+                  screen, as fractions of its width and height (data-line-m: phones)
+      data-gap    how far it is from the stop before (1 = about one screen's depth)
+      data-hold   how long the camera stays there (in screens of scrolling)
+      data-swing  optional: where the line swings out on its way here, "x,y"
+      data-dark   the page turns dark around this stop
+    On a piece (data-at="x,y"), its place when the camera is parked, from the
+    middle of the screen. Phones stack a stop's pieces in a column, except
+    pieces with their own data-at-m.
+      data-depth  nearer (negative) or further (positive) than its stop: parallax
+      data-drift  "x,y": how far to the side it waits while still far away
+      data-turn   degrees it is turned while far away
+  -->
+  <main id="world">
+
+    <!-- 01 · Home -->
+    <section class="stop stop--home" id="top" data-stop data-hud="01|Home" data-line="0.46,0.08" data-line-m="0.44,-0.33" data-hold=".55">
+      <div class="piece" data-at="0,-0.05" data-drift="0,0.05">
+        <h1 class="hero-name" aria-label="Rathin Baraiya"><span class="hero-line hero-line--a">Rathin</span> <span class="hero-line hero-line--b">Baraiya</span></h1>
+      </div>
+      <div class="piece hero-intro" data-at="-0.3,0.34" data-depth="-0.12" data-drift="-0.1,0.1">
+        <p class="mono hero-kicker">Web &amp; app developer · Gujarat, India</p>
+        <p>Websites, online shops and Android apps for small businesses, community groups and non-profits. Designed, built and launched.</p>
+      </div>
+      <div class="piece hide-m" data-at="0.4,0.35" data-depth="-0.2">
+        <a class="scroll-cue mono" href="#about">Scroll</a>
       </div>
     </section>
 
     <!-- 02 · About -->
-    <section class="scene scene--about" id="about" data-hud="02|About" data-tone="light" data-pin>
-      <div class="stage stage--card about" data-fx
-           data-thread-scene="0.456,-0.02 0.47,0.3 0.445,0.7 0.456,1.02"
-           data-thread="0.456,0.06 0.456,0.5 0.46,0.97" data-thread-sm="0.025,0.02 0.025,0.98">
-      <div class="wrap about-grid">
-        <figure class="about-figure reveal">
-          <div class="halftone"><img src="assets/img/rathin-halftone.webp" width="760" height="685" alt="Portrait of Rathin Baraiya, smiling" loading="lazy"></div>
-        </figure>
-        <div class="about-text">
-          <p class="mono label reveal">About</p>
-          <h2 data-split>Independent web &amp; app developer</h2>
-          <div class="reveal" style="--d:.1s">
-            <p>I’m Rathin Baraiya, a developer from Gujarat with a B.Tech in Information Technology from Government Engineering College, Gandhinagar.</p>
-            <p>My first project on the web was a blog. I built tecnews.in in college, got it approved for AdSense, ranked its gaming news on page&nbsp;1 of Google, and sold it in 2025.</p>
-            <p>From January to June 2023 I worked as a full stack developer at InfoLabz, then went freelance. Today I design, build and launch websites and apps for people whose work still runs on paper, phone calls and WhatsApp. I like projects where the software has to be simple enough for everyone in the room.</p>
-          </div>
-        </div>
-      </div>
+    <section class="stop stop--about" id="about" data-stop data-hud="02|About" data-gap="3.2" data-hold=".95" data-line="-0.21,-0.4" data-line-m="-0.44,-0.3" data-swing-m="-0.95,-0.5">
+      <figure class="piece about-figure" data-at="-0.21,0.04" data-depth="0.35" data-drift="-0.35,0.05" data-turn="26">
+        <div class="halftone"><img src="assets/img/rathin-halftone.webp" width="760" height="685" alt="Portrait of Rathin Baraiya, smiling"></div>
+      </figure>
+      <div class="piece about-text" data-at="0.17,0.03" data-depth="-0.08" data-drift="0.3,0" data-turn="-20">
+        <p class="mono label">About</p>
+        <h2 data-split>Independent web &amp; app developer</h2>
+        <p>I’m Rathin Baraiya, a developer from Gujarat with a B.Tech in Information Technology from Government Engineering College, Gandhinagar.</p>
+        <p>My first project on the web was a blog. I built tecnews.in in college, got it approved for AdSense, ranked its gaming news on page&nbsp;1 of Google, and sold it in 2025.</p>
+        <p>From January to June 2023 I worked as a full stack developer at InfoLabz, then went freelance. Today I design, build and launch websites and apps for people whose work still runs on paper, phone calls and WhatsApp. I like projects where the software has to be simple enough for everyone in the room.</p>
       </div>
     </section>
 
     <!-- 03 · By the numbers -->
-    <section class="scene scene--numbers" id="numbers" data-hud="03|By the numbers" data-tone="dark" data-pin>
-      <div class="stage stage--card numbers" data-fx
-           data-thread-scene="0.456,-0.02 0.5,0.3 0.66,0.5 0.93,0.62 0.92,1.02"
-           data-thread="0.47,0.03 0.52,0.22 0.5,0.4 0.3,0.6 0.08,0.71 0.5,0.97" data-thread-sm="0.025,0.02 0.025,0.98">
-      <div class="wrap">
-        <h2 class="mono label">By the numbers</h2>
-        <ul class="numbers-grid">
-          <li class="stat reveal" data-fx>
-            <span class="mono stat-label">Downloads on Google Play</span>
-            <span class="stat-value" data-split aria-label="1K plus"><span data-count="1">1</span>K+</span>
-          </li>
-          <li class="stat reveal" data-fx style="--d:.1s">
-            <span class="mono stat-label">Where my blog ranked on Google</span>
-            <span class="stat-value" data-split aria-label="Page 1">Page <span data-count="1">1</span></span>
-          </li>
-          <li class="stat reveal" data-fx style="--d:.2s">
-            <span class="mono stat-label">What that blog sold for</span>
-            <span class="stat-value" data-split aria-label="About 5 lakh rupees"><span class="rs">₹</span><span data-count="5">5</span>L</span>
-          </li>
-        </ul>
+    <section class="stop stop--numbers" id="numbers" data-stop data-dark data-hud="03|By the numbers" data-gap="3" data-hold=".75" data-line="0.02,0.41" data-line-m="0.44,0.36">
+      <h2 class="piece mono label" data-at="-0.33,-0.33" data-depth="-0.1">By the numbers</h2>
+      <div class="piece stat" data-at="-0.27,0" data-depth="0.5" data-drift="-0.2,-0.1">
+        <span class="mono stat-label">Downloads on Google Play</span>
+        <span class="stat-value" data-split aria-label="1K plus"><span data-count="1">1</span>K+</span>
       </div>
+      <div class="piece stat" data-at="0.06,0.17" data-drift="0,0.15">
+        <span class="mono stat-label">Where my blog ranked on Google</span>
+        <span class="stat-value" data-split aria-label="Page 1">Page <span data-count="1">1</span></span>
+      </div>
+      <div class="piece stat stat--right" data-at="0.29,-0.17" data-depth="-0.2" data-drift="0.25,-0.1">
+        <span class="mono stat-label">What that blog sold for</span>
+        <span class="stat-value" data-split aria-label="About 5 lakh rupees"><span class="rs">₹</span><span data-count="5">5</span>L</span>
       </div>
     </section>
 
-    <!-- 04 · Journey: while pinned, the years come and go one at a time -->
-    <section class="scene scene--journey" id="journey" data-hud="04|Journey" data-tone="light" data-pin data-sweep=".42">
-      <div class="stage stage--card journey"
-           data-thread-scene="0.92,-0.02 0.92,0.1 0.87,0.22 0.7,0.33 0.53,0.42 0.51,0.6 0.5,0.8 0.5,1.02">
-      <div class="wrap">
-        <div class="journey-head" data-fx data-thread="0.75,0.1 0.52,0.95" data-thread-sm="0.025,0.05 0.025,0.95"><h2 class="journey-title" data-split><span class="outline">The journey</span> <span class="so-far">so far</span></h2></div>
-        <ol class="milestones" data-thread="0.5,0.08 0.53,0.3 0.47,0.52 0.53,0.74 0.5,0.96" data-thread-sm="0.025,0.02 0.025,0.98">
-          <li class="milestone" data-fx>
-            <p class="milestone-mark" data-split>2019</p>
-            <div class="milestone-body reveal" style="--d:.1s">
-              <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="10" y="6" width="44" height="28" rx="2"/><path d="M4 40h56l-4-6H8z"/><path d="M18 14h18M18 20h26M18 26h12"/></svg>
-              <p class="mono label">Start</p>
-              <p>Started a B.Tech in Information Technology at GEC Gandhinagar. In college I also started tecnews.in, a tech blog on WordPress.</p>
-            </div>
-          </li>
-          <li class="milestone" data-fx>
-            <p class="milestone-mark" data-split>2023</p>
-            <div class="milestone-body reveal" style="--d:.1s">
-              <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 18 32 6l28 12-28 12z"/><path d="M14 23v11c0 4 8 8 18 8s18-4 18-8V23"/><path d="M60 18v14"/></svg>
-              <p class="mono label">Degree &amp; first job</p>
-              <p>Full stack developer at InfoLabz from January to June 2023, and finished my B.Tech in Information Technology.</p>
-            </div>
-          </li>
-          <li class="milestone" data-fx>
-            <p class="milestone-mark" data-split>2025</p>
-            <div class="milestone-body reveal" style="--d:.1s">
-              <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M8 8h22l26 26-14 14L16 22z"/><circle cx="18" cy="18" r="3"/><path d="M31 25l8 8M27 29l6 6"/></svg>
-              <p class="mono label">Exit</p>
-              <p>Sold tecnews.in for around ₹5 lakh, after Google approved it for AdSense and its gaming news reached page 1.</p>
-            </div>
-          </li>
-          <li class="milestone" data-fx>
-            <p class="milestone-mark" data-split>2026</p>
-            <div class="milestone-body reveal" style="--d:.1s">
-              <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="22" y="2" width="20" height="44" rx="4"/><path d="M29 40h6"/><path d="M8 18h8M6 26h10M48 18h8M48 26h10"/></svg>
-              <p class="mono label">Launch</p>
-              <p>Put Mandli on Google Play, and built websites for an animal-rescue trust, a photography studio and a honey brand.</p>
-            </div>
-          </li>
-          <li class="milestone" data-fx>
-            <p class="milestone-mark" data-split>Now</p>
-            <div class="milestone-body reveal" style="--d:.1s">
-              <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 24h48"/><path d="m40 12 14 12-14 12"/></svg>
-              <p class="mono label">Freelance</p>
-              <p>After InfoLabz I went freelance. Now I build websites and apps for clients. Yours could be next.</p>
-            </div>
-          </li>
-        </ol>
-      </div>
+    <!-- 04 · Journey: the title, then one stop per year -->
+    <section class="stop stop--journey" id="journey" data-stop data-hud="04|Journey" data-gap="3" data-hold=".5" data-line="0,0.3" data-line-m="-0.44,0.3">
+      <div class="piece" data-at="0,-0.05" data-drift="0,0.1">
+        <h2 class="journey-title" data-split><span class="outline">The journey</span> <span class="so-far">so far</span></h2>
       </div>
     </section>
 
-    <!-- 05 · What I do -->
-    <section class="scene scene--services" id="services" data-hud="05|What I do" data-tone="dark" data-pin>
-      <div class="stage stage--card services" data-fx
-           data-thread-scene="0.5,-0.02 0.5,0.06 0.42,0.11 0.22,0.14 0.1,0.2 0.075,0.29 0.12,0.37 0.3,0.43 0.62,0.55 0.3,0.59 0.09,0.61 0.035,0.65 0.025,0.75 0.025,1.02"
-           data-thread="0.92,0.06" data-thread-sm="0.025,0.03">
-      <div class="stars" aria-hidden="true"></div>
-      <div class="wrap">
-        <h2 class="services-title" data-split>What I do</h2>
-        <ul class="cloud" data-fx aria-label="Services" data-thread="0.06,0.22 0.62,0.6 0.3,0.8 0.1,0.9 0.04,0.96" data-thread-sm="">
-          <!-- --z: how far away each word starts (it flies in from that depth); --ry: its starting turn -->
-          <li style="--x:7%;  --y:4%;  --s:clamp(46px, 6.2vw, 96px); --depth:90;   --z:-520px;  --ry:26deg">Websites</li>
-          <li style="--x:58%; --y:1%;  --s:clamp(36px, 4.4vw, 68px); --depth:-70;  --z:-900px;  --ry:-22deg">Android apps</li>
-          <li style="--x:30%; --y:31%; --s:clamp(30px, 3.4vw, 54px); --depth:40;   --z:-1300px; --ry:18deg">Online shops</li>
-          <li style="--x:77%; --y:27%; --s:clamp(54px, 7.4vw, 116px); --depth:-110; --z:-420px;  --ry:-30deg">SEO</li>
-          <li style="--x:56%; --y:54%; --s:clamp(32px, 3.8vw, 60px); --depth:60;   --z:-1100px; --ry:-16deg">Admin dashboards</li>
-          <li style="--x:4%;  --y:76%; --s:clamp(42px, 5.6vw, 88px); --depth:-40;  --z:-700px;  --ry:24deg">Hosting &amp; launch</li>
-        </ul>
-        <dl class="services-detail" data-thread="0.025,0.5 0.025,1.75" data-thread-sm="0.025,0.5 0.025,1.02">
-          <div class="reveal"><dt class="mono">Websites</dt><dd>Business sites, NGO sites and studio portfolios, hand-built on WordPress or Next.js and quick on a basic phone.</dd></div>
-          <div class="reveal" style="--d:.06s"><dt class="mono">Android apps</dt><dd>Flutter apps with sign-in, live data, notifications and PDF reports, taken all the way through Play Store review.</dd></div>
-          <div class="reveal" style="--d:.12s"><dt class="mono">Online shops</dt><dd>WooCommerce stores with products, sizes, cart and checkout, ready to take orders.</dd></div>
-          <div class="reveal" style="--d:.18s"><dt class="mono">SEO &amp; launch</dt><dd>Speed and on-page SEO from someone who has ranked on page 1, plus domain, hosting and fixes after launch.</dd></div>
-        </dl>
-        <p class="mono how reveal">How I work: Understand <span aria-hidden="true">→</span> Build <span aria-hidden="true">→</span> Launch <span aria-hidden="true">→</span> Support</p>
+    <section class="stop milestone" data-stop data-gap="1.35" data-hold=".34" data-ease=".55" data-line="0,0.3" data-line-m="-0.44,0.3">
+      <p class="piece milestone-mark" data-split data-at="-0.19,-0.03" data-depth="0.25" data-drift="-0.25,0">2019</p>
+      <div class="piece milestone-body" data-at="0.2,0.03" data-depth="-0.1" data-drift="0.2,0">
+        <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="10" y="6" width="44" height="28" rx="2"/><path d="M4 40h56l-4-6H8z"/><path d="M18 14h18M18 20h26M18 26h12"/></svg>
+        <p class="mono label">Start</p>
+        <p>Started a B.Tech in Information Technology at GEC Gandhinagar. In college I also started tecnews.in, a tech blog on WordPress.</p>
       </div>
+    </section>
+
+    <section class="stop milestone milestone--flip" data-stop data-gap="1.35" data-hold=".34" data-ease=".55" data-line="0,0.3" data-line-m="0.44,0.3">
+      <p class="piece milestone-mark" data-split data-at="0.19,-0.03" data-depth="0.25" data-drift="0.25,0">2023</p>
+      <div class="piece milestone-body" data-at="-0.2,0.03" data-depth="-0.1" data-drift="-0.2,0">
+        <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 18 32 6l28 12-28 12z"/><path d="M14 23v11c0 4 8 8 18 8s18-4 18-8V23"/><path d="M60 18v14"/></svg>
+        <p class="mono label">Degree &amp; first job</p>
+        <p>Full stack developer at InfoLabz from January to June 2023, and finished my B.Tech in Information Technology.</p>
       </div>
+    </section>
+
+    <section class="stop milestone" data-stop data-gap="1.35" data-hold=".34" data-ease=".55" data-line="0,0.3" data-line-m="-0.44,0.3">
+      <p class="piece milestone-mark" data-split data-at="-0.19,-0.03" data-depth="0.25" data-drift="-0.25,0">2025</p>
+      <div class="piece milestone-body" data-at="0.2,0.03" data-depth="-0.1" data-drift="0.2,0">
+        <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M8 8h22l26 26-14 14L16 22z"/><circle cx="18" cy="18" r="3"/><path d="M31 25l8 8M27 29l6 6"/></svg>
+        <p class="mono label">Exit</p>
+        <p>Sold tecnews.in for around ₹5 lakh, after Google approved it for AdSense and its gaming news reached page 1.</p>
+      </div>
+    </section>
+
+    <section class="stop milestone milestone--flip" data-stop data-gap="1.35" data-hold=".34" data-ease=".55" data-line="0,0.3" data-line-m="0.44,0.3">
+      <p class="piece milestone-mark" data-split data-at="0.19,-0.03" data-depth="0.25" data-drift="0.25,0">2026</p>
+      <div class="piece milestone-body" data-at="-0.2,0.03" data-depth="-0.1" data-drift="-0.2,0">
+        <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="22" y="2" width="20" height="44" rx="4"/><path d="M29 40h6"/><path d="M8 18h8M6 26h10M48 18h8M48 26h10"/></svg>
+        <p class="mono label">Launch</p>
+        <p>Put Mandli on Google Play, and built websites for an animal-rescue trust, a photography studio and a honey brand.</p>
+      </div>
+    </section>
+
+    <section class="stop milestone" data-stop data-gap="1.35" data-hold=".45" data-ease=".55" data-line="0,0.3" data-line-m="-0.44,0.3">
+      <p class="piece milestone-mark" data-split data-at="-0.19,-0.03" data-depth="0.25" data-drift="-0.25,0">Now</p>
+      <div class="piece milestone-body" data-at="0.2,0.03" data-depth="-0.1" data-drift="0.2,0">
+        <svg class="milestone-icon" viewBox="0 0 64 48" aria-hidden="true"><path d="M4 24h48"/><path d="m40 12 14 12-14 12"/></svg>
+        <p class="mono label">Freelance</p>
+        <p>After InfoLabz I went freelance. Now I build websites and apps for clients. Yours could be next.</p>
+      </div>
+    </section>
+
+    <!-- 05 · What I do: the words hang in space, then the details -->
+    <section class="stop stop--services" id="services" data-stop data-dark data-hud="05|What I do" data-gap="3" data-hold=".85" data-line="0.46,-0.2" data-line-m="0.44,-0.36">
+      <div class="piece stars" data-at="0,0" data-at-m="0,0" data-depth="1.2" aria-hidden="true"></div>
+      <h2 class="piece services-title" data-split data-at="0,-0.34" data-depth="0.3" data-drift="0,-0.1">What I do</h2>
+      <ul class="cloud" aria-label="Services">
+        <li class="piece" data-at="-0.27,-0.1" data-depth="0.3" data-drift="-0.25,-0.05" data-turn="24" style="--s:clamp(46px, 6.2vw, 96px)">Websites</li>
+        <li class="piece" data-at="0.21,-0.15" data-depth="-0.1" data-drift="0.25,-0.1" data-turn="-20" style="--s:clamp(36px, 4.4vw, 68px)">Android apps</li>
+        <li class="piece" data-at="-0.06,0.05" data-depth="0.55" data-drift="-0.1,0.1" data-turn="16" style="--s:clamp(30px, 3.4vw, 54px)">Online shops</li>
+        <li class="piece" data-at="0.33,0.05" data-depth="-0.2" data-drift="0.3,0" data-turn="-28" style="--s:clamp(54px, 7.4vw, 116px)">SEO</li>
+        <li class="piece" data-at="0.13,0.22" data-depth="0.2" data-drift="0.2,0.15" data-turn="-14" style="--s:clamp(32px, 3.8vw, 60px)">Admin dashboards</li>
+        <li class="piece" data-at="-0.24,0.3" data-depth="-0.15" data-drift="-0.25,0.15" data-turn="22" style="--s:clamp(42px, 5.6vw, 88px)">Hosting &amp; launch</li>
+      </ul>
+    </section>
+
+    <section class="stop stop--details" data-stop data-dark data-gap="1.7" data-hold=".9" data-line="-0.46,0.32" data-line-m="-0.44,0.38">
+      <dl class="piece services-detail" data-at="0,-0.05" data-drift="0,0.12">
+        <div><dt class="mono">Websites</dt><dd>Business sites, NGO sites and studio portfolios, hand-built on WordPress or Next.js and quick on a basic phone.</dd></div>
+        <div><dt class="mono">Android apps</dt><dd>Flutter apps with sign-in, live data, notifications and PDF reports, taken all the way through Play Store review.</dd></div>
+        <div><dt class="mono">Online shops</dt><dd>WooCommerce stores with products, sizes, cart and checkout, ready to take orders.</dd></div>
+        <div><dt class="mono">SEO &amp; launch</dt><dd>Speed and on-page SEO from someone who has ranked on page 1, plus domain, hosting and fixes after launch.</dd></div>
+      </dl>
+      <p class="piece mono how" data-at="0,0.33" data-depth="-0.12">How I work: Understand <span aria-hidden="true">→</span> Build <span aria-hidden="true">→</span> Launch <span aria-hidden="true">→</span> Support</p>
     </section>
 
     <!-- 06 · Work -->
-    <section class="work" id="work" data-hud="06|Work" data-tone="light">
-      <!-- Pinned like the hero: the title arrives from far away, then the camera flies through it -->
-      <div class="work-pin" data-fx data-pin>
-        <div class="stage stage--card work-head"
-             data-thread-scene="-0.03,0.1 0.1,0.13 0.3,0.15 0.6,0.16 0.9,0.3 0.5,0.6 0.21,0.694 0.083,0.742 0.042,0.778 0.028,0.828 0.025,0.889 0.025,1.02"
-             data-thread-scene-sm="0.025,-0.02 0.3,0.12 0.6,0.3 0.3,0.48 0.09,0.58 0.03,0.68 0.025,0.78 0.025,1.02"
-             data-thread="0.86,0.12 0.2,0.86" data-thread-sm="0.025,0.1 0.6,0.5 0.025,0.95">
-          <h2 class="work-title"><span>Selected</span> <span>Work</span></h2>
-          <p class="mono work-count">My app, client work &amp; my first venture · 5 projects</p>
-        </div>
-      </div>
+    <section class="stop stop--work" id="work" data-stop data-hud="06|Work" data-gap="3" data-hold=".6" data-line="0.42,0.29" data-line-m="0.44,0.36">
+      <h2 class="work-title">
+        <span class="piece" data-at="-0.11,-0.12" data-depth="0.3" data-drift="-0.15,0">Selected</span>
+        <span class="piece" data-at="0.13,0.1" data-drift="0.15,0">Work</span>
+      </h2>
+      <p class="piece mono work-count" data-at="0,0.38" data-depth="-0.15">My app, client work &amp; my first venture · 5 projects</p>
+    </section>
 
-      <!-- 01 · Mandli, the featured project -->
-      <article class="mandli" id="mandli" data-tone="dark" data-fx data-thread="0.02,0.08 0.03,0.6 0.035,0.94 0.32,0.995" data-thread-sm="0.025,0.03 0.025,0.97">
+    <!-- 01 · Mandli, the featured project: it opens out of the line -->
+    <article class="stop mandli" id="mandli" data-stop data-portal data-gap="3" data-hold="3" data-line="0,0.04" data-line-m="0,0.04">
+      <div class="mandli-panel">
         <div class="wrap mandli-grid">
           <div class="mandli-copy">
-            <p class="mono feature-num reveal">01 / 05 · Featured project</p>
-            <p class="mandli-brand reveal"><span class="pill">My product</span><img src="assets/img/mandli-icon.webp" width="192" height="192" alt="" class="mandli-icon"><span class="mandli-word">Mandli</span></p>
-            <h3 class="mandli-title" data-split>The digital record book for <em>savings</em> groups.</h3>
-            <p class="reveal" style="--d:.1s">A mandal is a savings group: members put in money every month, lend to each other at interest, and share the returns. Mandli replaces the handwritten ledger with an app the whole group can see, and works out the interest on its own.</p>
-            <ul class="mandli-points reveal" style="--d:.12s">
+            <p class="mono feature-num fly">01 / 05 · Featured project</p>
+            <p class="mandli-brand fly"><span class="pill">My product</span><img src="assets/img/mandli-icon.webp" width="192" height="192" alt="" class="mandli-icon"><span class="mandli-word">Mandli</span></p>
+            <h3 class="mandli-title fly">The digital record book for <em>savings</em> groups.</h3>
+            <p class="fly">A mandal is a savings group: members put in money every month, lend to each other at interest, and share the returns. Mandli replaces the handwritten ledger with an app the whole group can see, and works out the interest on its own.</p>
+            <ul class="mandli-points fly">
               <li>Contributions, loans, interest and payouts worked out automatically</li>
               <li>Members join with a QR code or an invite code</li>
               <li>Monthly and all-time PDF reports</li>
               <li>Chairman and Vice Chairman approvals</li>
             </ul>
-            <p class="mono mandli-meta reveal" style="--d:.14s">Free · English &amp; Gujarati · 1K+ downloads</p>
-            <div class="mandli-actions reveal" style="--d:.16s">
+            <p class="mono mandli-meta fly">Free · English &amp; Gujarati · 1K+ downloads</p>
+            <div class="mandli-actions fly">
               <a class="btn-dark" href="https://play.google.com/store/apps/details?id=com.mandli.app" target="_blank" rel="noopener">Get it on Google Play<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
               <a class="text-link" href="https://mandli-website.vercel.app/" target="_blank" rel="noopener">See the website</a>
             </div>
-            <p class="mono mandli-stack reveal" style="--d:.18s">App, website &amp; admin panel · Flutter · Supabase · Next.js</p>
+            <p class="mono mandli-stack fly">App, website &amp; admin panel · Flutter · Supabase · Next.js</p>
           </div>
-          <div class="fan" data-fx>
-            <figure class="phone phone--l"><img src="assets/img/mandli-app-payment.webp" width="560" height="1244" alt="Mandli screen for recording a member’s monthly payment, with loan interest added automatically" loading="lazy"></figure>
-            <figure class="phone phone--c"><img src="assets/img/mandli-app-home.webp" width="560" height="1244" alt="Mandli home screen with the group’s available fund, month status and interest collected" loading="lazy"></figure>
-            <figure class="phone phone--r"><img src="assets/img/mandli-app-activities.webp" width="560" height="1244" alt="Mandli activities screen with loan settlement, expenses, penalties and the monthly report" loading="lazy"></figure>
+          <div class="fan fly">
+            <figure class="phone phone--l"><img src="assets/img/mandli-app-payment.webp" width="560" height="1244" alt="Mandli screen for recording a member’s monthly payment, with loan interest added automatically"></figure>
+            <figure class="phone phone--c"><img src="assets/img/mandli-app-home.webp" width="560" height="1244" alt="Mandli home screen with the group’s available fund, month status and interest collected"></figure>
+            <figure class="phone phone--r"><img src="assets/img/mandli-app-activities.webp" width="560" height="1244" alt="Mandli activities screen with loan settlement, expenses, penalties and the monthly report"></figure>
           </div>
         </div>
-      </article>
-
-      <div class="wrap">
-        <article class="project" data-fx data-thread="0.88,0.03 0.86,0.5 0.8,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
-          <div class="project-inner">
-            <a class="project-media reveal" href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-              <img src="assets/img/rescue-desktop.webp" width="1440" height="900" alt="" loading="lazy">
-            </a>
-            <div class="project-info reveal">
-              <p class="mono project-num">02 / 05</p>
-              <h3 class="project-title" data-split>Rescue Foundation Gujarat</h3>
-              <p class="project-sub">Helpline-first website for an animal-rescue trust</p>
-              <p class="project-desc">An emergency tool first, a donation site second: call and WhatsApp are one tap away on every page, even if the scripts fail to load. A custom WordPress theme, built from scratch, with a volunteer form and rescue videos that sync from YouTube.</p>
-              <p class="mono project-tags">WordPress · PHP · Vite · JavaScript</p>
-              <a class="project-link mono" href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener">Visit site<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
-            </div>
-          </div>
-        </article>
-
-        <article class="project project--right" data-fx data-thread="0.14,0.03 0.12,0.5 0.18,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
-          <div class="project-inner">
-            <a class="project-media reveal" href="https://vanisth.com/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-              <img src="assets/img/vanisth.webp" width="1440" height="900" alt="" loading="lazy">
-            </a>
-            <div class="project-info reveal">
-              <p class="mono project-num">03 / 05</p>
-              <h3 class="project-title" data-split>Vanisth</h3>
-              <p class="project-sub">Online shop for a raw-honey brand</p>
-              <p class="project-desc">A WooCommerce store for Vanisth’s raw honeys, each sold in different jar sizes, with cart and checkout. A custom theme that gives every jar its own batch certificate is in the works.</p>
-              <p class="mono project-tags">WordPress · WooCommerce</p>
-              <a class="project-link mono" href="https://vanisth.com/" target="_blank" rel="noopener">Visit site<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
-            </div>
-          </div>
-        </article>
-
-        <article class="project" data-fx data-thread="0.88,0.03 0.86,0.5 0.8,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
-          <div class="project-inner">
-            <a class="project-media reveal" href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-              <img src="assets/img/rk-album.webp" width="1440" height="900" alt="" loading="lazy">
-            </a>
-            <div class="project-info reveal">
-              <p class="mono project-num">04 / 05</p>
-              <h3 class="project-title" data-split>RK Creation</h3>
-              <p class="project-sub">Website for a photography studio in Bhavnagar</p>
-              <p class="project-desc">241 photographs in 14 galleries, a wedding album that opens as you scroll, shortlists couples can share with family, and bookings that go straight to WhatsApp.</p>
-              <p class="mono project-tags">Next.js · React · TypeScript · Tailwind CSS</p>
-              <a class="project-link mono" href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener">Visit site<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
-            </div>
-          </div>
-        </article>
-
-        <article class="project project--right" data-fx data-thread="0.14,0.03 0.12,0.5 0.2,0.97" data-thread-sm="0.025,0.05 0.025,0.95">
-          <div class="project-inner">
-            <div class="project-media tec-card reveal" aria-hidden="true">
-              <span class="tec-name">tecnews.in</span>
-              <span class="tec-meta mono">WordPress · Tech &amp; gaming news</span>
-              <span class="tec-stamp mono">Sold · around ₹5 lakh</span>
-            </div>
-            <div class="project-info reveal">
-              <p class="mono project-num">05 / 05</p>
-              <h3 class="project-title" data-split>tecnews.in</h3>
-              <p class="project-sub">Tech blog, built in college and sold in 2025</p>
-              <p class="project-desc">My first venture. I set up the site and grew it until Google approved it for AdSense and its gaming news reached page 1 of Google. In 2025 I sold it for around ₹5 lakh.</p>
-              <p class="mono project-tags">WordPress · SEO · AdSense</p>
-            </div>
-          </div>
-        </article>
       </div>
-    </section>
+    </article>
 
-    <!-- 07 · Contact -->
-    <section class="contact" id="contact" data-hud="07|Contact" data-tone="light" data-fx data-thread="0.1,0.3 0.48,0.16 0.83,0.25" data-thread-sm="0.025,0.06 0.025,0.12 0.035,0.16 0.1,0.19 0.28,0.2 0.56,0.17 0.85,0.155">
-      <svg class="plane" viewBox="0 0 100 80" aria-hidden="true"><g class="plane-g"><path class="plane-body" d="M4 36 96 4 70 74 48 50z"/><path class="plane-fold" d="M96 4 48 50l-6 22 12-16"/></g></svg>
-      <h2 class="contact-title" data-split>Let’s build somethin<span class="hop">g</span></h2>
-      <div class="contact-email-row reveal" style="--d:.08s">
+    <!-- 02–05 · Projects -->
+    <article class="stop project" data-stop data-gap="2.7" data-hold=".65" data-line="0.3,0.27" data-line-m="0.44,0.4">
+      <div class="piece project-card" data-at="-0.17,0" data-drift="-0.18,0.04" data-turn="14">
+        <a class="project-media" href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/rescue-desktop.webp" width="1440" height="900" alt="">
+        </a>
+        <div class="project-info">
+          <p class="mono project-num">02 / 05</p>
+          <h3 class="project-title">Rescue Foundation Gujarat</h3>
+          <p class="project-sub">Helpline-first website for an animal-rescue trust</p>
+          <p class="project-desc">An emergency tool first, a donation site second: call and WhatsApp are one tap away on every page, even if the scripts fail to load. A custom WordPress theme, built from scratch, with a volunteer form and rescue videos that sync from YouTube.</p>
+          <p class="mono project-tags">WordPress · PHP · Vite · JavaScript</p>
+          <a class="project-link mono" href="https://rescuefoundationgujarat.org/" target="_blank" rel="noopener">Visit site<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="stop project" data-stop data-gap="2.7" data-hold=".65" data-line="-0.3,0.27" data-line-m="-0.44,0.4">
+      <div class="piece project-card" data-at="0.17,0" data-drift="0.18,0.04" data-turn="-14">
+        <a class="project-media" href="https://vanisth.com/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/vanisth.webp" width="1440" height="900" alt="">
+        </a>
+        <div class="project-info">
+          <p class="mono project-num">03 / 05</p>
+          <h3 class="project-title">Vanisth</h3>
+          <p class="project-sub">Online shop for a raw-honey brand</p>
+          <p class="project-desc">A WooCommerce store for Vanisth’s raw honeys, each sold in different jar sizes, with cart and checkout. A custom theme that gives every jar its own batch certificate is in the works.</p>
+          <p class="mono project-tags">WordPress · WooCommerce</p>
+          <a class="project-link mono" href="https://vanisth.com/" target="_blank" rel="noopener">Visit site<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="stop project" data-stop data-gap="2.7" data-hold=".65" data-line="0.3,0.27" data-line-m="0.44,0.4">
+      <div class="piece project-card" data-at="-0.17,0" data-drift="-0.18,0.04" data-turn="14">
+        <a class="project-media" href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/rk-album.webp" width="1440" height="900" alt="">
+        </a>
+        <div class="project-info">
+          <p class="mono project-num">04 / 05</p>
+          <h3 class="project-title">RK Creation</h3>
+          <p class="project-sub">Website for a photography studio in Bhavnagar</p>
+          <p class="project-desc">241 photographs in 14 galleries, a wedding album that opens as you scroll, shortlists couples can share with family, and bookings that go straight to WhatsApp.</p>
+          <p class="mono project-tags">Next.js · React · TypeScript · Tailwind CSS</p>
+          <a class="project-link mono" href="https://rkcreation-bay.vercel.app/" target="_blank" rel="noopener">Visit site<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="stop project" data-stop data-gap="2.7" data-hold=".65" data-line="-0.3,0.27" data-line-m="-0.44,0.4">
+      <div class="piece project-card" data-at="0.17,0" data-drift="0.18,0.04" data-turn="-14">
+        <div class="project-media tec-card" aria-hidden="true">
+          <span class="tec-name">tecnews.in</span>
+          <span class="tec-meta mono">WordPress · Tech &amp; gaming news</span>
+          <span class="tec-stamp mono">Sold · around ₹5 lakh</span>
+        </div>
+        <div class="project-info">
+          <p class="mono project-num">05 / 05</p>
+          <h3 class="project-title">tecnews.in</h3>
+          <p class="project-sub">Tech blog, built in college and sold in 2025</p>
+          <p class="project-desc">My first venture. I set up the site and grew it until Google approved it for AdSense and its gaming news reached page 1 of Google. In 2025 I sold it for around ₹5 lakh.</p>
+          <p class="mono project-tags">WordPress · SEO · AdSense</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 07 · Contact: the line ends at the paper plane -->
+    <section class="stop stop--contact" id="contact" data-stop data-hud="07|Contact" data-gap="3.2" data-hold="1.2" data-line="0.31,-0.3" data-line-m="0.3,-0.37">
+      <div class="piece plane-p" data-at="0.31,-0.3" data-at-m="0.3,-0.37" data-depth="-0.1" aria-hidden="true">
+        <svg class="plane" viewBox="0 0 100 80"><g class="plane-g"><path class="plane-body" d="M4 36 96 4 70 74 48 50z"/><path class="plane-fold" d="M96 4 48 50l-6 22 12-16"/></g></svg>
+      </div>
+      <h2 class="piece contact-title" data-split data-at="0,-0.1" data-drift="0,0.05">Let’s build somethin<span class="hop">g</span></h2>
+      <div class="piece contact-email-row" data-at="0,0.09" data-depth="-0.08" data-drift="0,0.1">
         <a class="contact-email" href="mailto:rathin2308@gmail.com?subject=Project%20enquiry">rathin2308@gmail.com</a>
         <button class="copy-btn mono" type="button" data-copy="rathin2308@gmail.com"><span data-copy-label>Copy email</span></button>
       </div>
-      <p class="contact-note reveal" style="--d:.12s">Tell me a little about your project: a website, an app, or an idea you are not sure how to start.</p>
-      <footer class="contact-foot">
+      <p class="piece contact-note" data-at="0,0.25" data-depth="-0.12" data-drift="0,0.1">Tell me a little about your project: a website, an app, or an idea you are not sure how to start.</p>
+      <footer class="piece contact-foot" data-at="0,0.41" data-depth="-0.2" data-drift="0,0.1">
         <a class="mono" href="https://www.linkedin.com/in/rathin-baraiya-4b6459234/" target="_blank" rel="noopener">LinkedIn</a>
         <a class="mono" href="https://github.com/rathin-dev" target="_blank" rel="noopener">GitHub</a>
         <a class="mono" href="https://play.google.com/store/apps/details?id=com.mandli.app" target="_blank" rel="noopener">Google Play</a>
@@ -346,6 +329,9 @@
       </footer>
     </section>
   </main>
+
+  <!-- Gives the page its scroll length in 3D mode (set by main.js) -->
+  <div class="spacer" aria-hidden="true"></div>
 
   <script src="assets/js/main.js" defer></script>
 </body>

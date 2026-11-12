@@ -1,17 +1,19 @@
 // Rathin Baraiya — portfolio.
 // Without this file every section is still visible and every link works.
-// It adds smooth (inertial) scrolling, the pinned 3D scenes, the blue line that
-// draws itself through them, the progress rail on the right, the full-screen
-// menu, and the motion.
+// With motion allowed it turns the page into a 3D world: scrolling flies a
+// camera along the blue line, and the pieces of each stop float around it.
 (() => {
   const root = document.documentElement;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
-  const clamp01 = (n) => Math.min(1, Math.max(0, n));
-  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+  const clamp01 = (n) => clamp(n, 0, 1);
+  // 0 → 1 with a soft start and a soft end
+  const smooth = (t) => { const x = clamp01(t); return x * x * x * (x * (x * 6 - 15) + 10); };
+  const easeOut = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+  const num = (v, fallback) => { const n = parseFloat(v); return Number.isNaN(n) ? fallback : n; };
+  const pair = (v) => { const [a, b] = String(v || '0,0').split(','); return [num(a, 0), num(b, 0)]; };
 
   $$('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
@@ -30,7 +32,7 @@
   });
   requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('loaded')));
 
-  // ── Headings marked data-split: wrap each word so it can rise from a mask ──
+  // ── Headings marked data-split: one span per word, numbered with --i ───
   // Counters ([data-count]) and the rupee sign stay whole, as one unit each.
   const splitWords = (el) => {
     let i = 0;
@@ -71,127 +73,18 @@
   };
   $$('[data-split]').forEach(splitWords);
 
-  // ── Smooth scrolling ──────────────────────────────────────────────────
-  // Mouse wheels and trackpads glide to a stop instead of jumping. Touch
-  // screens keep their own native momentum, and reduced motion turns it off.
-  const smooth = (() => {
-    if (reduce || !finePointer) return null;
-    root.style.scrollBehavior = 'auto';
-    let current = window.scrollY;
-    let target = current;
-    let running = false;
-    let locked = false;
-    let tween = null;
-    let last = 0;
-    const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    const clampY = (y) => Math.min(maxY(), Math.max(0, y));
-
-    const frame = (now) => {
-      const dt = last ? Math.min(64, now - last) : 16.7;
-      last = now;
-      if (tween) {
-        const t = clamp01((now - tween.t0) / tween.dur);
-        current = tween.from + (tween.to - tween.from) * easeInOut(t);
-        if (t >= 1) { current = tween.to; target = tween.to; tween = null; }
-      } else {
-        // Ease towards the target; the same feel at 60 Hz and 120 Hz
-        current += (target - current) * (1 - Math.pow(1 - 0.085, dt / 16.7));
-        if (Math.abs(target - current) < 0.4) current = target;
-      }
-      window.scrollTo(0, current);
-      if (tween || current !== target) {
-        requestAnimationFrame(frame);
-      } else {
-        running = false;
-        last = 0;
-      }
-    };
-    const run = () => {
-      if (running) return;
-      running = true;
-      last = 0;
-      requestAnimationFrame(frame);
-    };
-
-    window.addEventListener('wheel', (e) => {
-      if (locked || e.ctrlKey || e.defaultPrevented) return; // ctrl + wheel is zoom
-      e.preventDefault();
-      let dy = e.deltaY;
-      if (e.deltaMode === 1) dy *= 16;
-      else if (e.deltaMode === 2) dy *= window.innerHeight;
-      if (tween) { target = current; tween = null; }
-      target = clampY(target + dy);
-      run();
-    }, { passive: false });
-
-    // Stay in step with scrolling we did not start: scrollbar drag, find in page, focus
-    const sync = () => { if (!running) { current = window.scrollY; target = current; } };
-    window.addEventListener('scroll', sync, { passive: true });
-    window.addEventListener('resize', sync);
-
-    return {
-      to(y) {
-        const to = clampY(y);
-        const dist = Math.abs(to - current);
-        tween = { from: current, to, t0: performance.now(), dur: Math.min(1700, 650 + dist * 0.22) };
-        target = to;
-        run();
-      },
-      by(dy) {
-        if (tween) { target = current; tween = null; }
-        target = clampY(target + dy);
-        run();
-      },
-      lock(on) {
-        locked = on;
-        tween = null;
-        current = window.scrollY;
-        target = current;
-      },
-      get locked() { return locked; },
-    };
-  })();
-
-  // Page-down, space and arrow keys glide too, unless a control has focus
-  if (smooth) {
-    window.addEventListener('keydown', (e) => {
-      if (smooth.locked || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
-      const ae = document.activeElement;
-      const pageFocused = !ae || ae === document.body || ae === root || ae.getAttribute('tabindex') === '-1';
-      if (!pageFocused) return;
-      const page = window.innerHeight * 0.85;
-      let dy = 0;
-      switch (e.key) {
-        case 'ArrowDown': dy = 120; break;
-        case 'ArrowUp': dy = -120; break;
-        case 'PageDown': dy = page; break;
-        case 'PageUp': dy = -page; break;
-        case ' ': dy = e.shiftKey ? -page : page; break;
-        case 'Home': e.preventDefault(); smooth.to(0); return;
-        case 'End': e.preventDefault(); smooth.to(Infinity); return;
-        default: return;
-      }
-      e.preventDefault();
-      smooth.by(dy);
-    });
-  }
-
-  // In-page links glide to their section and take keyboard focus with them
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('a[href^="#"]');
-    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const id = a.getAttribute('href');
-    if (id.length < 2) return;
-    const el = document.querySelector(id);
-    if (!el) return;
-    e.preventDefault();
-    const y = id === '#top' ? 0 : el.getBoundingClientRect().top + window.scrollY;
-    if (smooth) smooth.to(y);
-    else window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
-    history.pushState(null, '', id);
-    if (id !== '#top') {
-      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
-      el.focus({ preventScroll: true });
+  // ── Stars behind "What I do" ──────────────────────────────────────────
+  $$('.stars').forEach((box) => {
+    let seed = 11;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 90; i++) {
+      const star = document.createElement('i');
+      star.style.setProperty('--x', `${(rand() * 100).toFixed(2)}%`);
+      star.style.setProperty('--y', `${(rand() * 100).toFixed(2)}%`);
+      star.style.setProperty('--sz', `${(1 + rand() * 2.2).toFixed(1)}px`);
+      star.style.setProperty('--o', (0.2 + rand() * 0.6).toFixed(2));
+      star.style.setProperty('--t', `${(2 + rand() * 4).toFixed(1)}s`);
+      box.append(star);
     }
   });
 
@@ -205,7 +98,6 @@
     menu.inert = !open;
     root.classList.toggle('menu-open', open);
     document.body.style.overflow = open ? 'hidden' : '';
-    if (smooth) smooth.lock(open);
     if (open) setTimeout(() => menuLinks[0] && menuLinks[0].focus({ preventScroll: true }), 300);
   };
   menu.inert = true;
@@ -222,564 +114,6 @@
     else if (e.shiftKey && i === 0) { e.preventDefault(); items[items.length - 1].focus(); }
     else if (!e.shiftKey && i === items.length - 1) { e.preventDefault(); items[0].focus(); }
   });
-
-  // ── Layout ────────────────────────────────────────────────────────────
-  // A scroll frame reads no layout: everything that moves is worked out from
-  // the scroll position and a few numbers measured here (again on resize).
-  const HEAD = 0.58;   // where the line's head sits on screen while the page scrolls (fraction of its height)
-  const START = 0.86;  // ...and where it starts, on the first screen
-  // How a covered scene tilts away, and how a card is inset while it rises.
-  // Copies of the numbers on .js .stage and .js .stage--card in style.css.
-  const TILT = { perspective: 1600, depth: 280, angle: 9 };
-  const INSET = { top: 0.07, side: 0.05 };
-  const narrow = window.matchMedia('(max-width: 900px)');
-  const toneEls = $$('[data-tone]');
-  const hudEls = $$('[data-hud]');
-  const fxEls = $$('[data-fx]');
-  const pinEls = $$('[data-pin]');
-  const hud = $('.hud');
-  const hudTicks = $('.hud-ticks');
-  const hudNum = $('.hud-num');
-  const hudName = $('.hud-name');
-
-  const brand = $('.brand');
-  let vh = window.innerHeight;
-  let vw = root.clientWidth;
-  let maxScroll = 1;
-  let hudTop = 84;
-  let hudH = 0;
-  let hudX = 0;
-  let brandAt = [0, 0];
-  let menuAt = [0, 0];
-  let scenes = [];
-  let fxs = [];
-  let tones = [];
-  let marks = [];
-
-  // Top of an element on the page, from layout alone (transforms ignored)
-  const pageTop = (el) => {
-    let y = 0;
-    for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
-    return y;
-  };
-  // Top of an element inside a box that contains it
-  const topIn = (el, box) => {
-    let y = 0;
-    let n = el;
-    while (n && n !== box) { y += n.offsetTop; n = n.offsetParent; }
-    return n === box ? y : el.getBoundingClientRect().top - box.getBoundingClientRect().top;
-  };
-
-  // Scenes. A [data-pin] wrapper is taller than its .stage, and the stage is
-  // sticky, so it stays pinned while the wrapper scrolls past. On the way a
-  // scene goes through three phases:
-  //   rise   the stage slides up into place (over the scene before it)
-  //   hold   it is pinned on its own
-  //   cover  it is still pinned while the next block rises over it
-  const measureScenes = () => {
-    scenes = pinEls.map((wrap) => {
-      const stage = $(':scope > .stage', wrap);
-      const top = pageTop(wrap);
-      const wrapH = wrap.offsetHeight;
-      const stageH = stage ? stage.offsetHeight : wrapH;
-      const pinLen = Math.max(0, wrapH - stageH);
-      const cs = stage ? getComputedStyle(stage) : null;
-      const pinned = !reduce && !!stage && pinLen > 1 && cs.position === 'sticky';
-      const next = wrap.nextElementSibling;
-      const nextTop = next ? pageTop(next) : Infinity;
-      const overlap = Math.min(Math.max(top + wrapH - nextTop, 0), pinLen);
-      return {
-        wrap, stage, pinned, top, stageH, pinLen, nextTop,
-        hold: pinLen - overlap,           // scroll distance it is pinned on its own
-        rise: Math.min(vh, top),          // scroll distance it takes to slide into place
-        sweep: parseFloat(wrap.dataset.sweep) || HEAD,
-        dark: wrap.dataset.tone === 'dark',
-        card: pinned && cs.clipPath !== 'none',   // rises as an inset, rounded card
-        tilts: pinned && cs.transform !== 'none', // tilts away when covered
-        ox: vw / 2,                               // where it tilts about (set with the line)
-        hidden: !!stage && stage.style.visibility === 'hidden',
-      };
-    });
-  };
-  // A scene's phases at scroll position y, each 0 to 1 (see above)
-  const phase = (s, y) => {
-    if (reduce) return { rise: 1, hold: 0, cover: 0, pin: 0 };
-    const top = s.top - y;
-    const rise = clamp01((vh - top) / vh);
-    if (!s.pinned) return { rise, hold: 0, cover: 0, pin: 0 };
-    const into = Math.min(Math.max(-top, 0), s.pinLen);
-    return {
-      rise,
-      hold: s.hold > 0 ? clamp01(into / s.hold) : 1,
-      cover: s.pinLen > s.hold ? clamp01((into - s.hold) / (s.pinLen - s.hold)) : 0,
-      pin: into / s.pinLen,
-    };
-  };
-  // The pinned scene an element belongs to (the stage itself counts)
-  const sceneOf = (el) => scenes.find((s) => s.pinned && s.stage.contains(el)) || null;
-  // Where a scene's stage is on screen at scroll position y
-  const stageTopAt = (s, y) => {
-    const t = s.top - y;
-    if (t >= 0) return t;
-    return -t <= s.pinLen ? 0 : t + s.pinLen;
-  };
-
-  const centre = (el) => {
-    const r = el.getBoundingClientRect();
-    return [r.left + r.width / 2, r.top + r.height / 2];
-  };
-  const measure = () => {
-    vh = window.innerHeight;
-    vw = root.clientWidth;
-    maxScroll = Math.max(1, root.scrollHeight - vh);
-    const hr = hud.getBoundingClientRect();
-    hudTop = hr.top;
-    hudH = hr.height;
-    hudX = hr.left;
-    brandAt = centre(brand);
-    menuAt = centre(menuBtn);
-    measureScenes();
-    fxs = fxEls.map((el) => {
-      const s = sceneOf(el);
-      return { el, s, top: s ? topIn(el, s.stage) : pageTop(el), h: el.offsetHeight };
-    });
-    tones = toneEls.map((el) => ({
-      s: scenes.find((sc) => sc.pinned && sc.wrap === el) || null,
-      top: pageTop(el),
-      h: el.offsetHeight,
-      dark: el.dataset.tone === 'dark',
-    }));
-    marks = hudEls.map((el) => {
-      const [num, name] = el.dataset.hud.split('|');
-      return { top: pageTop(el), num, name };
-    });
-    hudTicks.textContent = '';
-    marks.forEach((m) => {
-      const tick = document.createElement('i');
-      tick.style.top = `${(clamp01(m.top / maxScroll) * hudH).toFixed(1)}px`;
-      hudTicks.append(tick);
-    });
-  };
-  // Is the block showing at (vx, vy) on screen dark? The last block in page
-  // order that covers that point wins: later scenes are drawn over earlier
-  // ones, and nested blocks (the purple Mandli inside Work) come after their
-  // parent. A rising card is inset, and a covered scene tilts away from the
-  // edges, so near the corners the light page can show instead.
-  const darkAt = (vx, vy, y, behind) => {
-    let dark = behind;
-    tones.forEach((t) => {
-      if (!t.s) {
-        const top = t.top - y;
-        if (vy >= top && vy < top + t.h) dark = t.dark;
-        return;
-      }
-      const s = t.s;
-      const top = stageTopAt(s, y);
-      const { rise, cover } = phase(s, y);
-      let from = top;
-      let left = 0;
-      let right = vw;
-      if (s.card && rise < 1) {
-        from += INSET.top * (1 - rise) * s.stageH;
-        left = INSET.side * (1 - rise) * vw;
-        right = vw - left;
-      }
-      if (vy < from || vy >= top + s.stageH) return;
-      if (s.tilts && cover > 0) {
-        const a = (TILT.angle * cover * Math.PI) / 180;
-        const z = (vy - top) * Math.sin(a) - TILT.depth * cover;
-        const k = TILT.perspective / (TILT.perspective - z);
-        left = s.ox * (1 - k);
-        right = s.ox + (vw - s.ox) * k;
-      }
-      if (vx >= left && vx < right) dark = t.dark;
-    });
-    return dark;
-  };
-
-  // ── The blue line ─────────────────────────────────────────────────────
-  // Its route comes from attributes, as points "x,y x,y": x is a fraction of
-  // the page width, y a fraction of the element's height.
-  //   data-thread           the route while the element scrolls normally
-  //   data-thread-sm        the same on narrow screens ("" = no points there)
-  //   data-thread-scene     the route while its scene is pinned (y: fraction of the stage)
-  //   data-thread-scene-sm  the same on narrow screens
-  // Points inside a pinned stage make a piece of the line drawn inside that
-  // stage, so it holds still with the stage and tilts away with it; the other
-  // pieces are drawn over the page. While the page scrolls, the head stays a
-  // little above the middle of the screen; while a scene is held, it runs on
-  // through that scene.
-  const NS = 'http://www.w3.org/2000/svg';
-  const make = (tag, attrs, parent) => {
-    const el = document.createElementNS(NS, tag);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    if (parent) parent.append(el);
-    return el;
-  };
-  const makeHead = (parent) => {
-    const g = make('g', { class: 'thread-head' }, parent);
-    make('circle', { class: 'thread-halo', r: '9' }, g);
-    make('circle', { r: '3.5' }, g);
-    g.style.opacity = '0';
-    return g;
-  };
-  const pageSvg = $('.thread');
-  const darkClip = $('#thread-dark');
-  const pageG = make('g', {}, pageSvg);
-  const pageHead = makeHead(pageSvg);
-  const stageSvgs = new Map();
-  let pieces = [];
-  let heads = [pageHead];
-  let darkRects = [];
-  let introStart = 0;
-  const INTRO = 1800;
-
-  const curve = (pts) => {
-    if (pts.length < 2) return '';
-    const f = (n) => n.toFixed(1);
-    let d = `M${f(pts[0][0])} ${f(pts[0][1])}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i - 1] || pts[i];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[i + 2] || p2;
-      d += ` C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)}`
-        + ` ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)}`
-        + ` ${f(p2[0])} ${f(p2[1])}`;
-    }
-    return d;
-  };
-
-  // The scroll position at which a point of the line gets drawn.
-  // On the page: when it is HEAD of the way down the screen (START on the first screen).
-  const pageReach = (y) => {
-    if (y <= START * vh) return y - START * vh;
-    if (y <= (1 + HEAD) * vh) return (y - START * vh) / (1 - START + HEAD);
-    return y - HEAD * vh;
-  };
-  // In a pinned stage: the part above its sweep line (data-sweep, a fraction of
-  // its height) is drawn while it rises, the rest while it is held. A stage
-  // that rises over another scene brings the head in on its top edge.
-  const stageReach = (s, y, card) => {
-    const f = y / s.stageH;
-    const a = s.sweep;
-    if (f <= a) return card && s.rise > 0 ? s.top - s.rise * (1 - f / a) : s.top + (f - a) * s.stageH;
-    return s.top + clamp01((f - a) / (1 - a)) * s.hold;
-  };
-
-  const stageSvgFor = (s) => {
-    let svg = stageSvgs.get(s.stage);
-    if (!svg) {
-      svg = make('svg', { class: 'thread thread--stage', 'aria-hidden': 'true', focusable: 'false', preserveAspectRatio: 'none' });
-      s.stage.append(svg);
-      stageSvgs.set(s.stage, svg);
-    }
-    return svg;
-  };
-
-  const buildThread = () => {
-    const W = root.clientWidth;
-    const small = narrow.matches;
-    pageSvg.setAttribute('viewBox', `0 0 ${W} ${document.body.getBoundingClientRect().height.toFixed(0)}`);
-    pageSvg.setAttribute('preserveAspectRatio', 'none');
-
-    // Points, grouped into pieces
-    const list = [];
-    $$('[data-thread], [data-thread-sm], [data-thread-scene], [data-thread-scene-sm]').forEach((el) => {
-      const s = sceneOf(el);
-      const name = s ? 'data-thread-scene' : 'data-thread';
-      const attr = small && el.hasAttribute(`${name}-sm`) ? `${name}-sm` : name;
-      const spec = (el.getAttribute(attr) || '').trim();
-      if (!spec) return;
-      const top = s ? topIn(el, s.stage) : pageTop(el);
-      const h = el.offsetHeight;
-      const pts = spec.split(/\s+/).map((pair) => {
-        const [fx, fy] = pair.split(',').map(Number);
-        return [fx * W, top + fy * h];
-      });
-      const last = list[list.length - 1];
-      if (last && last.s === s) last.pts.push(...pts);
-      else list.push({ s, pts });
-    });
-
-    // Joins, so the pieces read as one line
-    list.forEach((pc, i) => {
-      const prev = list[i - 1];
-      if (!prev) return;
-      const end = prev.pts[prev.pts.length - 1];
-      if (pc.s) {
-        // Into a scene: its piece starts at the top edge of its stage, unless
-        // its route comes in from one side
-        const [x0, y0] = pc.pts[0];
-        if (y0 > 0 && x0 >= 0 && x0 <= W) pc.pts.unshift([prev.s ? end[0] : x0, -0.02 * pc.s.stageH]);
-        if (!prev.s) prev.pts.push([pc.pts[0][0], pc.s.top + pc.pts[0][1]]);
-        pc.card = !!prev.s;
-      } else if (prev.s) {
-        // Out of a scene: the page piece starts where the scene's piece ends
-        // at the moment the next block begins to rise over it
-        const at = prev.s.top + prev.s.hold;
-        pc.pts.unshift([end[0], at + end[1]]);
-        pc.join = { s: at, y: at + end[1], e: end[1] / vh };
-      }
-    });
-
-    // Draw them
-    pageG.textContent = '';
-    stageSvgs.forEach((svg) => { svg.textContent = ''; svg.style.display = 'none'; });
-    scenes.forEach((s) => { if (s.stage) s.stage.style.removeProperty('--ox'); });
-    heads = [pageHead];
-    let sMax = -Infinity;
-    pieces = list.filter((pc) => pc.pts.length > 1).map((pc) => {
-      let svg = pageG;
-      let head = pageHead;
-      if (pc.s) {
-        svg = stageSvgFor(pc.s);
-        svg.setAttribute('viewBox', `0 0 ${W} ${pc.s.stageH.toFixed(0)}`);
-        svg.classList.toggle('thread--dark', pc.s.dark);
-        svg.style.display = '';
-        // The stage tilts away about the point where its line leaves it, so
-        // the line still meets the next scene's line while that one rises
-        const end = pc.pts[pc.pts.length - 1];
-        pc.s.ox = clamp01(end[0] / W) * W;
-        pc.s.stage.style.setProperty('--ox', `${(clamp01(end[0] / W) * 100).toFixed(2)}%`);
-      }
-      const d = curve(pc.pts);
-      make('path', { class: 'thread-ghost', d }, svg);
-      const line = make('path', { class: 'thread-line', d }, svg);
-      const light = pc.s ? null : make('path', { class: 'thread-line thread-line--light', d, 'clip-path': 'url(#thread-dark)' }, svg);
-      if (pc.s) { head = makeHead(svg); heads.push(head); }
-      const total = line.getTotalLength();
-      [line, light].forEach((p) => {
-        if (!p) return;
-        p.style.strokeDasharray = `${total} ${total}`;
-        p.style.strokeDashoffset = String(total);
-      });
-
-      // How far the line has got at each length: the scroll position by which
-      // that point is drawn, never earlier than any point before it
-      const lens = [];
-      const reach = [];
-      for (let l = 0; ; l += 8) {
-        const len = Math.min(l, total);
-        const p = line.getPointAtLength(len);
-        let s = pc.s ? stageReach(pc.s, p.y, pc.card) : pageReach(p.y);
-        if (pc.join) s = Math.min(s, pc.join.s + (p.y - pc.join.y) / Math.max(0.2, 1 + HEAD - pc.join.e));
-        sMax = Math.max(sMax, s);
-        lens.push(len);
-        reach.push(sMax);
-        if (len >= total) break;
-      }
-      return { s: pc.s, line, light, head, total, lens, reach, drawn: -1 };
-    });
-
-    // Over dark blocks on the page the line switches to a lighter blue
-    // (a pinned dark scene does that in its own stage)
-    darkClip.textContent = '';
-    darkRects = tones.filter((t) => t.dark && !t.s).map((t) => ({ top: t.top, bottom: t.top + t.h }));
-    darkRects.forEach((r) => make('rect', {
-      x: '0', y: r.top.toFixed(0), width: String(W), height: (r.bottom - r.top).toFixed(0),
-    }, darkClip));
-  };
-
-  const drawThread = (y) => {
-    if (!pieces.length) return;
-    let lens = pieces.map((pc) => {
-      if (reduce) return pc.total;
-      const r = pc.reach;
-      if (r[r.length - 1] <= y) return pc.total;
-      if (r[0] > y) return 0;
-      let lo = 0;
-      let hi = r.length - 1;
-      let idx = 0;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        if (r[mid] <= y) { idx = mid; lo = mid + 1; } else { hi = mid - 1; }
-      }
-      return pc.lens[idx];
-    });
-    // On first load the line draws itself in, whatever the scroll position
-    if (!reduce && introStart) {
-      const k = easeOut(clamp01((performance.now() - introStart) / INTRO));
-      if (k < 1) {
-        let budget = lens.reduce((a, b) => a + b, 0) * k;
-        lens = lens.map((l) => { const take = Math.min(l, budget); budget -= take; return take; });
-      }
-    }
-    pieces.forEach((pc, i) => {
-      if (pc.drawn === lens[i]) return;
-      pc.drawn = lens[i];
-      const off = (pc.total - lens[i]).toFixed(1);
-      pc.line.style.strokeDashoffset = off;
-      if (pc.light) pc.light.style.strokeDashoffset = off;
-    });
-    // One head, at the tip of the first piece that isn't finished
-    let shown = null;
-    const i = lens.findIndex((len, k) => len < pieces[k].total - 2);
-    if (i >= 0 && lens[i] > 4) {
-      const pc = pieces[i];
-      const p = pc.line.getPointAtLength(lens[i]);
-      pc.head.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
-      if (!pc.s) pc.head.classList.toggle('on-dark', darkRects.some((r) => p.y >= r.top && p.y < r.bottom));
-      shown = pc.head;
-    }
-    heads.forEach((h) => {
-      const o = h === shown ? '1' : '0';
-      if (h.style.opacity !== o) h.style.opacity = o;
-    });
-  };
-
-  // ── Scroll-linked updates ─────────────────────────────────────────────
-  // This file only publishes numbers; style.css decides what they do.
-  //   --p    on [data-fx]: 0 as the element enters at the bottom of the screen, 1 as it leaves at the top
-  //   --q    on [data-fx]: reaches 1 when the element's middle is in the middle of the screen
-  //   --in   on [data-fx]: 0 as its top edge enters at the bottom, 1 once that edge is most of the way up
-  //   --rise on [data-pin]: 0 to 1 as its stage slides up into place
-  //   --hold on [data-pin]: 0 to 1 while its stage is pinned on its own
-  //   --cover on [data-pin]: 0 to 1 while the next block rises over its stage
-  //   --pin  on [data-pin]: 0 to 1 across the whole time its stage is pinned
-  // Inside a pinned stage, --p, --q and --in carry on as if the stage were
-  // still scrolling, so what it holds keeps arriving while it is pinned.
-  const written = new WeakMap();
-  const put = (el, name, value) => {
-    let cache = written.get(el);
-    if (!cache) { cache = {}; written.set(el, cache); }
-    if (cache[name] === value) return;
-    cache[name] = value;
-    el.style.setProperty(name, value);
-  };
-  const updateScenes = (y) => {
-    scenes.forEach((s) => {
-      const { rise, hold, cover, pin } = phase(s, y);
-      put(s.wrap, '--rise', rise.toFixed(4));
-      put(s.wrap, '--hold', hold.toFixed(4));
-      put(s.wrap, '--cover', cover.toFixed(4));
-      put(s.wrap, '--pin', pin.toFixed(4));
-      // Once the next block has covered a stage completely, hide it, so it
-      // can't show around the edges of a later scene as that one tilts away
-      if (s.stage) {
-        const hide = s.pinned && s.nextTop - y <= stageTopAt(s, y) + 0.5;
-        if (hide !== s.hidden) {
-          s.hidden = hide;
-          s.stage.style.visibility = hide ? 'hidden' : '';
-        }
-      }
-    });
-  };
-  const updateFx = (y) => {
-    fxs.forEach((f) => {
-      if (reduce) {
-        put(f.el, '--p', '.5'); put(f.el, '--q', '1'); put(f.el, '--in', '1');
-        return;
-      }
-      const top = f.s ? f.s.top - y + f.top : f.top - y;
-      const p = clamp01((vh - top) / (vh + f.h));
-      put(f.el, '--p', p.toFixed(4));
-      put(f.el, '--q', clamp01(p * 2).toFixed(4));
-      put(f.el, '--in', clamp01((vh - top) / (vh * 0.85)).toFixed(4));
-    });
-  };
-
-  let ticking = false;
-  const onScroll = () => {
-    ticking = false;
-    const y = window.scrollY;
-    const prog = clamp01(y / maxScroll);
-    const dotY = prog * hudH;
-    hud.style.setProperty('--hud-y', `${dotY.toFixed(1)}px`);
-    let current = marks[0];
-    marks.forEach((m) => { if (m.top <= y + vh * 0.4) current = m; });
-    if (current && hudNum.textContent !== current.num) {
-      hudNum.textContent = current.num;
-      hudName.textContent = current.name;
-    }
-    // The page behind the scenes turns dark while a dark scene tilts away
-    const behind = scenes.some((s) => {
-      if (!s.tilts || !s.dark) return false;
-      const { cover } = phase(s, y);
-      return cover > 0 && cover < 1;
-    });
-    root.classList.toggle('under-dark', behind);
-    brand.classList.toggle('on-dark', darkAt(brandAt[0], brandAt[1], y, behind));
-    menuBtn.classList.toggle('on-dark', darkAt(menuAt[0], menuAt[1], y, behind));
-    root.classList.toggle('hud-dark', darkAt(hudX, hudTop + dotY, y, behind));
-    updateScenes(y);
-    updateFx(y);
-    drawThread(y);
-  };
-  const requestTick = () => {
-    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
-  };
-  window.addEventListener('scroll', requestTick, { passive: true });
-
-  const rebuild = () => { measure(); buildThread(); onScroll(); };
-  let rebuildTimer = 0;
-  const scheduleRebuild = () => { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuild, 120); };
-  window.addEventListener('resize', scheduleRebuild);
-  if ('ResizeObserver' in window) new ResizeObserver(scheduleRebuild).observe(document.body);
-  window.addEventListener('load', rebuild);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rebuild);
-
-  rebuild();
-  if (!reduce) {
-    introStart = performance.now();
-    const intro = () => {
-      drawThread(window.scrollY);
-      if (performance.now() - introStart < INTRO) requestAnimationFrame(intro);
-    };
-    requestAnimationFrame(intro);
-  }
-
-  // ── Stars behind "What I do" ──────────────────────────────────────────
-  $$('.stars').forEach((box) => {
-    let seed = 11;
-    const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    for (let i = 0; i < 70; i++) {
-      const star = document.createElement('i');
-      star.style.setProperty('--x', `${(rand() * 100).toFixed(2)}%`);
-      star.style.setProperty('--y', `${(rand() * 100).toFixed(2)}%`);
-      star.style.setProperty('--sz', `${(1 + rand() * 2.2).toFixed(1)}px`);
-      star.style.setProperty('--o', (0.2 + rand() * 0.6).toFixed(2));
-      star.style.setProperty('--t', `${(2 + rand() * 4).toFixed(1)}s`);
-      box.append(star);
-    }
-  });
-
-  // ── Appear on scroll, and counters ────────────────────────────────────
-  const appear = $$('.reveal, [data-split]');
-  const counters = $$('[data-count]');
-  const runCount = (el) => {
-    const end = Number(el.dataset.count);
-    if (reduce || !end) return;
-    const t0 = performance.now();
-    const step = (now) => {
-      const t = clamp01((now - t0) / 1400);
-      el.textContent = String(Math.round(end * easeOut(t)));
-      if (t < 1) requestAnimationFrame(step);
-    };
-    el.textContent = '0';
-    requestAnimationFrame(step);
-  };
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('in');
-        io.unobserve(entry.target);
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
-    appear.forEach((el) => io.observe(el));
-
-    const countIo = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        runCount(entry.target);
-        countIo.unobserve(entry.target);
-      });
-    }, { threshold: 0.6 });
-    counters.forEach((el) => countIo.observe(el));
-  } else {
-    appear.forEach((el) => el.classList.add('in'));
-  }
 
   // ── Copy email ────────────────────────────────────────────────────────
   $$('[data-copy]').forEach((btn) => {
@@ -808,4 +142,555 @@
       }
     });
   });
+
+  const stopEls = $$('[data-stop]');
+  const hud = $('.hud');
+  const hudTicks = $('.hud-ticks');
+  const hudNum = $('.hud-num');
+  const hudName = $('.hud-name');
+  const setLabel = (label) => {
+    const [n, name] = label.split('|');
+    if (hudNum.textContent !== n) { hudNum.textContent = n; hudName.textContent = name; }
+  };
+
+  const canvas = $('.line');
+  const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+
+  // ── The ordinary page (reduced motion, or no canvas) ──────────────────
+  // The progress rail follows the scroll, and the header and rail switch to
+  // light colours over the dark sections.
+  if (reduce || !ctx || !window.requestAnimationFrame) {
+    let marks = [];
+    let max = 1;
+    const measure = () => {
+      max = Math.max(1, root.scrollHeight - innerHeight);
+      marks = stopEls.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { top: r.top + scrollY, bottom: r.bottom + scrollY, dark: el.hasAttribute('data-dark'), hud: el.dataset.hud || '' };
+      });
+      hudTicks.textContent = '';
+      marks.filter((m) => m.hud).forEach((m) => {
+        const tick = document.createElement('i');
+        tick.style.top = `${(clamp01(m.top / max) * hud.offsetHeight).toFixed(1)}px`;
+        hudTicks.append(tick);
+      });
+    };
+    const darkAt = (y) => marks.some((m) => m.dark && y >= m.top && y < m.bottom);
+    const update = () => {
+      const y = scrollY;
+      const dotY = clamp01(y / max) * hud.offsetHeight;
+      hud.style.setProperty('--hud-y', `${dotY.toFixed(1)}px`);
+      let current = marks.find((m) => m.hud);
+      marks.forEach((m) => { if (m.hud && m.top <= y + innerHeight * 0.4) current = m; });
+      if (current) setLabel(current.hud);
+      root.classList.toggle('hdr-dark', darkAt(y + 36));
+      root.classList.toggle('hud-dark', darkAt(y + hud.getBoundingClientRect().top + dotY));
+    };
+    let ticking = false;
+    addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; update(); }); }
+    }, { passive: true });
+    const refresh = () => { measure(); update(); };
+    addEventListener('resize', refresh);
+    addEventListener('load', refresh);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+    refresh();
+    return;
+  }
+
+  // ── The 3D world ──────────────────────────────────────────────────────
+  // Stops sit one behind another along the depth axis (z). The scroll
+  // position becomes the camera's z: it parks in front of each stop for a
+  // moment, then flies on to the next. A piece at distance r from the camera
+  // is drawn at scale F / r around the middle of the screen (F is the focal
+  // length), so when the camera is parked one F in front of a stop, its
+  // pieces sit exactly at their data-at places, at full size.
+  root.classList.add('world');
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch { /* not allowed */ }
+
+  const spacer = $('.spacer');
+  const portalEl = $('[data-portal]');
+  const panel = portalEl ? $('.mandli-panel', portalEl) : null;
+  const panelContent = panel ? $('.mandli-grid', panel) : null;
+  const flies = portalEl ? $$('.fly', portalEl) : [];
+  const counters = $$('[data-count]');
+  const narrowQuery = window.matchMedia('(max-width: 759px), (max-width: 999px) and (orientation: portrait)');
+
+  // The tall "large viewport" height, so the phone's address bar sliding in
+  // and out doesn't resize the world
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:100vh;height:100lvh;visibility:hidden;pointer-events:none';
+  document.body.append(probe);
+
+  const AHEAD = 3.3;  // how far ahead of the camera the line reaches, in F
+  let W = 0;
+  let H = 0;
+  let F = 900;
+  let narrow = false;
+  let stops = [];
+  let pieces = [];
+  let keys = [];
+  let curve = [];
+  let endZ = 0;
+  let total = 1;
+  let portal = null;
+  let numbersStop = null;
+
+  const build = () => {
+    W = root.clientWidth;
+    H = Math.max(innerHeight, probe.offsetHeight || 0);
+    narrow = narrowQuery.matches;
+    F = narrow ? 900 : clamp(W * 0.8, 900, 1400);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Stops, one behind another
+    let z = 0;
+    stops = stopEls.map((el, i) => {
+      const gap = num(el.dataset.gap, 3);
+      if (i) z += gap * F;
+      const [ax, ay] = pair(narrow && el.dataset.lineM ? el.dataset.lineM : el.dataset.line);
+      const swing = narrow && el.dataset.swingM ? el.dataset.swingM : el.dataset.swing;
+      return {
+        el, i, z, gap, ax, ay,
+        hold: num(el.dataset.hold, 0.6),
+        ease: num(el.dataset.ease, 1),
+        swing: swing ? pair(swing) : null,
+        dark: el.hasAttribute('data-dark'),
+        portal: el.hasAttribute('data-portal'),
+        hud: el.dataset.hud || '',
+        holdStart: 0, // scroll position where the camera parks (set below)
+        holdPx: 0,    // how much scrolling it stays parked for
+      };
+    });
+    portal = stops.find((s) => s.portal) || null;
+    numbersStop = stops.find((s) => s.el.querySelector('[data-count]')) || null;
+
+    // Pieces. On phones a stop's pieces stack in a column in the middle of
+    // the screen, below the header, unless a piece has its own data-at-m.
+    pieces = [];
+    const headerRoom = 64;
+    const bottomRoom = 24;
+    stops.forEach((s) => {
+      const own = $$('[data-at]', s.el).filter((p) => p.closest('[data-stop]') === s.el && getComputedStyle(p).display !== 'none');
+      const place = new Map();
+      if (narrow) {
+        const column = own.filter((p) => !p.hasAttribute('data-at-m'));
+        const gapPx = 20;
+        const heights = column.map((p) => p.offsetHeight);
+        const sum = heights.reduce((a, b) => a + b, 0) + gapPx * Math.max(0, column.length - 1);
+        let y = headerRoom + Math.max(0, (H - headerRoom - bottomRoom - sum) / 2);
+        column.forEach((p, k) => {
+          place.set(p, [0, (y + heights[k] / 2 - H / 2) / H]);
+          y += heights[k] + gapPx;
+        });
+      }
+      own.forEach((p) => {
+        let at = pair(p.dataset.at);
+        if (narrow) at = p.hasAttribute('data-at-m') ? pair(p.dataset.atM) : place.get(p);
+        const depth = num(p.dataset.depth, 0);
+        const [dx, dy] = pair(p.dataset.drift);
+        pieces.push({
+          el: p, s, depth,
+          x: at[0], y: at[1],
+          z: s.z + depth * F,
+          d: F * (1 + depth),                      // its distance when the camera is parked
+          dx: narrow ? dx * 0.5 : dx, dy,
+          turn: narrow ? 0 : num(p.dataset.turn, 0),
+          fade: clamp(s.gap * 0.82, 1, 1.7) * F,  // how far ahead it starts to appear
+          shown: false, live: false, vars: {},
+        });
+        // Nearer stops, and nearer pieces within a stop, are drawn on top
+        p.style.zIndex = String(1000 - s.i * 10 - Math.round(depth * 4));
+      });
+    });
+
+    // The camera's path: scroll position → z. It arrives a little short of
+    // each stop, drifts slowly through the hold, then flies to the next.
+    keys = [];
+    let sc = 0;
+    const travel = (narrow ? 0.5 : 0.44) * H;
+    stops.forEach((s, i) => {
+      if (i) sc += s.gap * travel;
+      const lead = i === 0 || s.portal ? 0 : 0.11;
+      const drift = s.portal ? 0 : i === 0 ? 0.18 : 0.11;
+      s.holdStart = sc;
+      s.holdPx = s.hold * H * (s.portal ? 1 : 0.6);
+      keys.push({ sc, z: s.z - F - lead * F, ease: i ? 0.5 * s.ease : 0 });
+      sc += s.holdPx;
+      keys.push({ sc, z: s.z - F + drift * F, ease: 0 });
+    });
+    total = sc;
+    spacer.style.height = `${Math.round(total + H)}px`;
+
+    // The line: through each stop's data-line point. Between stops that are
+    // far apart it swings out to one side, alternating left and right. It
+    // starts just off the side of the screen, so on load it comes in to the name.
+    const pts = [];
+    const first = stops[0];
+    const side0 = first.ax >= 0 ? 1 : -1;
+    pts.push({ z: first.z - 0.72 * F, x: (first.ax + 0.75 * side0) * W, y: (first.ay + 0.04) * H });
+    let side = -side0;
+    stops.forEach((s, i) => {
+      if (i && s.gap >= 2.2) {
+        const prev = stops[i - 1];
+        const [sx, sy] = s.swing || [side * (narrow ? 0.9 : 1.05), side < 0 ? 0.44 : -0.42];
+        side = -side;
+        pts.push({ z: (prev.z + s.z) / 2, x: sx * W, y: sy * H });
+      }
+      pts.push({ z: s.z, x: s.ax * W, y: s.ay * H });
+    });
+    endZ = pts[pts.length - 1].z;
+
+    // A smooth curve through the points (x and y as functions of z)
+    curve = [];
+    const n = pts.length;
+    const slope = (i, key) => {
+      if (i === 0 || i === n - 1) return 0;
+      return (pts[i + 1][key] - pts[i - 1][key]) / Math.max(1, pts[i + 1].z - pts[i - 1].z);
+    };
+    for (let i = 0; i < n - 1; i++) {
+      const a = pts[i];
+      const b = pts[i + 1];
+      const len = Math.max(1, b.z - a.z);
+      const ax = slope(i, 'x') * len;
+      const ay = slope(i, 'y') * len;
+      const bx = slope(i + 1, 'x') * len;
+      const by = slope(i + 1, 'y') * len;
+      const steps = Math.max(24, Math.round((len / F) * 44));
+      for (let j = 0; j < steps; j++) {
+        const t = j / steps;
+        const t2 = t * t;
+        const t3 = t2 * t;
+        const h1 = 2 * t3 - 3 * t2 + 1;
+        const h2 = t3 - 2 * t2 + t;
+        const h3 = -2 * t3 + 3 * t2;
+        const h4 = t3 - t2;
+        curve.push({ z: a.z + len * t, x: h1 * a.x + h2 * ax + h3 * b.x + h4 * bx, y: h1 * a.y + h2 * ay + h3 * b.y + h4 * by });
+      }
+    }
+    curve.push({ z: pts[n - 1].z, x: pts[n - 1].x, y: pts[n - 1].y });
+
+    // Ticks on the progress rail for the main stops
+    hudTicks.textContent = '';
+    stops.filter((s) => s.hud).forEach((s) => {
+      const tick = document.createElement('i');
+      tick.style.top = `${(clamp01(s.holdStart / Math.max(1, total)) * hud.offsetHeight).toFixed(1)}px`;
+      hudTicks.append(tick);
+    });
+  };
+
+  const cameraZ = (sc) => {
+    if (sc <= keys[0].sc) return keys[0].z;
+    for (let i = 1; i < keys.length; i++) {
+      const a = keys[i - 1];
+      const b = keys[i];
+      if (sc <= b.sc) {
+        let t = (sc - a.sc) / Math.max(1, b.sc - a.sc);
+        t += (smooth(t) - t) * b.ease;
+        return a.z + (b.z - a.z) * t;
+      }
+    }
+    return keys[keys.length - 1].z;
+  };
+
+  // ── Colours: the whole page fades to dark around the dark stops ────────
+  const LIGHT = { '--bg': [236, 234, 226], '--ink': [18, 20, 19], '--ink-2': [59, 64, 61], '--muted': [94, 99, 96], '--hair': [211, 208, 198], '--blue': [34, 52, 224] };
+  const DARK = { '--bg': [13, 14, 14], '--ink': [236, 234, 226], '--ink-2': [217, 215, 208], '--muted': [163, 168, 165], '--hair': [52, 55, 53], '--blue': [141, 151, 255] };
+  const mixRGB = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  let darkness = -1;
+  let lineColor = 'rgb(34,52,224)';
+  const theme = (camZ) => {
+    let d = 0;
+    stops.forEach((s) => {
+      if (!s.dark) return;
+      const u = s.z - camZ - F; // 0 while parked at it; > 0 still ahead
+      d = Math.max(d, Math.min(1 - smooth((u - 0.6 * F) / (0.8 * F)), 1 - smooth((-u - 0.9 * F) / (0.6 * F))));
+    });
+    if (Math.abs(d - darkness) < 0.003) return;
+    darkness = d;
+    Object.keys(LIGHT).forEach((name) => {
+      const c = mixRGB(LIGHT[name], DARK[name], d);
+      root.style.setProperty(name, `rgb(${c.join(',')})`);
+      if (name === '--blue') lineColor = `rgb(${c.join(',')})`;
+    });
+  };
+
+  // ── The line ──────────────────────────────────────────────────────────
+  // Drawn from just in front of the camera to `ahead` beyond it: thick and
+  // solid nearby, thin and faint far away, with a dot at its tip.
+  let ahead = 0;
+  const drawLine = (camZ) => {
+    ctx.clearRect(0, 0, W, H);
+    const near = 0.1 * F;
+    const tipZ = Math.min(camZ + ahead, endZ);
+    if (tipZ <= camZ + near) return;
+    const cx = W / 2;
+    const cy = H / 2;
+    ctx.strokeStyle = lineColor;
+    // Flat ends: the line is drawn in short runs of one width and opacity, and
+    // round ends would overlap where two runs meet and show as darker beads
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'round';
+    let prev = null;
+    let run = null;
+    let tip = null;
+    for (let i = 0; i < curve.length; i++) {
+      let p = curve[i];
+      if (p.z < camZ + near) { prev = null; continue; }
+      if (p.z > tipZ) {
+        if (!prev) break;
+        const q = curve[i - 1];
+        const t = (tipZ - q.z) / Math.max(1e-6, p.z - q.z);
+        p = { z: tipZ, x: q.x + (p.x - q.x) * t, y: q.y + (p.y - q.y) * t };
+      }
+      const dz = p.z - camZ;
+      const k = F / dz;
+      const X = cx + p.x * k;
+      const Y = cy + p.y * k;
+      if (prev) {
+        if (Math.abs(X - prev.X) + Math.abs(Y - prev.Y) < 1 && p.z < tipZ) continue;
+        const a = Math.round(smooth((dz - near) / (0.3 * F)) * (1 - 0.8 * smooth((dz - 1.2 * F) / Math.max(1, ahead - 1.2 * F))) * 40) / 40;
+        const w = Math.round(clamp(2.4 * k, 0.6, 7) * 4) / 4;
+        if (a <= 0) {
+          if (run) { ctx.stroke(); run = null; }
+        } else {
+          if (!run || run.a !== a || run.w !== w) {
+            if (run) ctx.stroke();
+            run = { a, w };
+            ctx.globalAlpha = a;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.moveTo(prev.X, prev.Y);
+          }
+          ctx.lineTo(X, Y);
+        }
+      }
+      prev = { X, Y };
+      tip = { X, Y, k };
+      if (p.z >= tipZ) break;
+    }
+    if (run) ctx.stroke();
+    ctx.globalAlpha = 1;
+    if (!tip) return;
+    // The tip; at the very end of the line it becomes a bigger dot
+    const end = tipZ >= endZ - 1;
+    const r = end ? clamp(10 * tip.k, 6, 20) : clamp(5 * tip.k, 2.5, 14);
+    ctx.fillStyle = lineColor;
+    ctx.beginPath();
+    ctx.arc(tip.X, tip.Y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.18;
+    ctx.beginPath();
+    ctx.arc(tip.X, tip.Y, r * 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  };
+
+  // ── Pieces ────────────────────────────────────────────────────────────
+  // Far ahead a piece is small, faded, waiting to one side (data-drift) and
+  // turned (data-turn). It settles at its place as the camera parks, then
+  // grows and fades as the camera flies past. It also publishes --far,
+  // --arrive and --leave for style.css.
+  const setVar = (p, name, value) => {
+    if (p.vars[name] === value) return;
+    p.vars[name] = value;
+    p.el.style.setProperty(name, value);
+  };
+  const placePieces = (camZ) => {
+    const cx = W / 2;
+    const cy = H / 2;
+    pieces.forEach((p) => {
+      const r = p.z - camZ;
+      const o = r - p.d; // > 0: still ahead of its parked place
+      let alpha = 0;
+      if (r > 0.16 * F && o < 2.7 * F) {
+        alpha = o > 0
+          ? 1 - smooth((o - 0.45 * p.fade) / (0.55 * p.fade))
+          : 1 - smooth((-o - 0.22 * F) / (0.42 * F));
+      }
+      if (alpha < 0.01) {
+        if (p.shown) {
+          p.shown = false;
+          p.live = false;
+          p.el.style.visibility = 'hidden';
+          p.el.style.pointerEvents = 'none';
+        }
+        return;
+      }
+      const far = o > 0 ? smooth(o / (1.9 * F)) : 0;
+      const scale = p.d / r;
+      const x = (p.x + p.dx * far) * W;
+      const y = (p.y + p.dy * far) * H;
+      if (!p.shown) { p.shown = true; p.el.style.visibility = 'visible'; }
+      p.el.style.opacity = alpha.toFixed(3);
+      p.el.style.transform = `translate3d(${(cx + x * scale).toFixed(1)}px,${(cy + y * scale).toFixed(1)}px,0) translate(-50%,-50%) perspective(1100px) rotateY(${(p.turn * far).toFixed(2)}deg) scale(${scale.toFixed(4)})`;
+      setVar(p, '--far', far.toFixed(3));
+      setVar(p, '--arrive', clamp01((0.55 * F - o) / (0.65 * F)).toFixed(3));
+      setVar(p, '--leave', smooth((-o - 0.03 * F) / (0.38 * F)).toFixed(3));
+      const live = alpha > 0.6 && scale < 1.6;
+      if (live !== p.live) { p.live = live; p.el.style.pointerEvents = live ? 'auto' : 'none'; }
+    });
+  };
+
+  // ── Mandli opens out of the line ──────────────────────────────────────
+  // A purple circle grows from the point where the line passes the Mandli
+  // stop until it fills the screen; its content flies in; then the panel
+  // tilts away and shrinks like a card as the camera moves on.
+  let portalOn = false;
+  const updatePortal = (sc, camZ) => {
+    if (!portal) return;
+    const s0 = portal.holdStart;
+    const len = portal.holdPx;
+    const open = smooth((sc - (s0 - 0.75 * H)) / (1.05 * H));
+    const close = smooth((sc - (s0 + len - 1.05 * H)) / H);
+    if (open <= 0 || close >= 1) {
+      if (portalOn) {
+        portalOn = false;
+        portalEl.style.visibility = 'hidden';
+        portalEl.style.pointerEvents = 'none';
+        root.classList.remove('on-portal');
+      }
+      return;
+    }
+    if (!portalOn) { portalOn = true; portalEl.style.visibility = 'visible'; }
+    const k = F / Math.max(0.2 * F, portal.z - camZ);
+    const ox = W / 2 + portal.ax * W * k;
+    const oy = H / 2 + portal.ay * H * k;
+    const reach = Math.hypot(Math.max(ox, W - ox), Math.max(oy, H - oy));
+    const radius = reach * open + 1;
+    panel.style.clipPath = `circle(${radius.toFixed(1)}px at ${ox.toFixed(1)}px ${oy.toFixed(1)}px)`;
+    // The header and the rail turn white while the purple is behind them
+    const covered = close < 0.06 && Math.hypot(ox, oy) < radius && Math.hypot(W - ox, oy) < radius;
+    root.classList.toggle('on-portal', covered);
+    panel.style.transform = close > 0
+      ? `perspective(1200px) translate3d(0,${(-close * H * 0.04).toFixed(1)}px,0) rotateX(${(close * 14).toFixed(2)}deg) scale(${(1 - 0.84 * close).toFixed(4)})`
+      : '';
+    panel.style.borderRadius = `${(close * 36).toFixed(1)}px`;
+    panel.style.opacity = (1 - smooth((close - 0.7) / 0.3)).toFixed(3);
+    const t = (sc - (s0 - 0.3 * H)) / (0.95 * H);
+    flies.forEach((el, i) => el.style.setProperty('--q', (1 - smooth(t * 1.6 - i * 0.12)).toFixed(3)));
+    // Too tall for the screen (phones): the content scrolls through while the camera holds
+    const room = H - 112;
+    const over = Math.max(0, panelContent.offsetHeight - room);
+    const read = clamp01((sc - (s0 + 0.25 * H)) / Math.max(1, len - 1.4 * H));
+    panelContent.style.transform = over ? `translate3d(0,${(over / 2 + 24 - (over + 24) * read).toFixed(1)}px,0)` : '';
+    portalEl.style.pointerEvents = open > 0.98 && close < 0.2 ? 'auto' : 'none';
+  };
+
+  // ── Counters count up when the camera reaches them ────────────────────
+  let counted = false;
+  let countRun = 0;
+  const runCounters = () => {
+    const id = ++countRun;
+    const t0 = performance.now();
+    const step = (now) => {
+      if (id !== countRun) return;
+      const t = clamp01((now - t0) / 1600);
+      counters.forEach((el) => { el.textContent = String(Math.round(Number(el.dataset.count) * easeOut(t))); });
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  const updateCounters = (camZ) => {
+    if (!numbersStop) return;
+    const u = numbersStop.z - camZ - F;
+    if (!counted && u < 1.3 * F && u > -0.8 * F) { counted = true; runCounters(); }
+    if (counted && (u > 1.6 * F || u < -2 * F)) {
+      counted = false;
+      countRun++;
+      counters.forEach((el) => { el.textContent = '0'; });
+    }
+  };
+  counters.forEach((el) => { el.textContent = '0'; });
+
+  // ── Progress rail ─────────────────────────────────────────────────────
+  const updateHud = (sc) => {
+    const dotY = clamp01(sc / Math.max(1, total)) * hud.offsetHeight;
+    hud.style.setProperty('--hud-y', `${dotY.toFixed(1)}px`);
+    let current = stops[0];
+    stops.forEach((s) => { if (s.hud && s.holdStart <= sc + 0.6 * H) current = s; });
+    if (current && current.hud) setLabel(current.hud);
+  };
+
+  // ── In-page links fly the camera to their stop ────────────────────────
+  const stopFor = (hash) => {
+    if (!hash || hash === '#' || hash === '#top') return stops[0];
+    const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (!el) return null;
+    return stops.find((s) => s.el === el || s.el.contains(el)) || null;
+  };
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const hash = a.getAttribute('href');
+    const s = stopFor(hash);
+    if (!s) return;
+    e.preventDefault();
+    window.scrollTo(0, s.holdStart + 2);
+    history.pushState(null, '', hash === '#top' ? location.pathname + location.search : hash);
+  });
+
+  // ── The loop ──────────────────────────────────────────────────────────
+  // The page scrolls natively; the camera eases after the scroll position,
+  // faster across long jumps, so everything glides.
+  let camS = 0;
+  let lastT = performance.now();
+  let lastS = NaN;
+  let lastAhead = NaN;
+  let dirty = true;
+  const introAt = performance.now();
+  const frame = (now) => {
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    const target = window.scrollY;
+    const diff = target - camS;
+    camS += diff * (1 - Math.exp(-dt * (Math.abs(diff) > 3 * H ? 9 : 5.5)));
+    if (Math.abs(target - camS) < 0.3) camS = target;
+    ahead = AHEAD * F * smooth((now - introAt - 250) / 1700);
+    if (dirty || camS !== lastS || ahead !== lastAhead) {
+      dirty = false;
+      lastS = camS;
+      lastAhead = ahead;
+      const camZ = cameraZ(camS);
+      theme(camZ);
+      drawLine(camZ);
+      placePieces(camZ);
+      updatePortal(camS, camZ);
+      updateCounters(camZ);
+      updateHud(camS);
+    }
+    requestAnimationFrame(frame);
+  };
+
+  const rebuild = () => {
+    const progress = clamp01(window.scrollY / Math.max(1, total));
+    build();
+    const y = progress * total;
+    window.scrollTo(0, y);
+    camS = y;
+    dirty = true;
+  };
+  let resizeTimer = 0;
+  let lastWidth = innerWidth;
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  addEventListener('resize', () => {
+    // On phones the address bar sliding in and out only changes the height: ignore that
+    if (coarse && innerWidth === lastWidth) return;
+    lastWidth = innerWidth;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(rebuild, 150);
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rebuild);
+  addEventListener('load', rebuild);
+
+  build();
+  // Start at the top, or at the stop the address points to
+  const startStop = location.hash ? stopFor(location.hash) : null;
+  const startY = startStop && startStop !== stops[0] ? startStop.holdStart + 2 : 0;
+  window.scrollTo(0, startY);
+  camS = startY;
+  requestAnimationFrame(frame);
 })();
