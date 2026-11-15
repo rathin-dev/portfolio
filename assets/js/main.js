@@ -214,6 +214,13 @@
   const panelContent = panel ? $('.mandli-grid', panel) : null;
   const flies = portalEl ? $$('.fly', portalEl) : [];
   const counters = $$('[data-count]');
+  const worldEl = $('#world');
+  // The car at the end of the line. data-line-end marks where its ribbon
+  // starts (fractions of its box): the line ends there, and the car grows out
+  // of the line's blue dot from there.
+  const car = $('.car');
+  const lineEnd = car ? pair(car.dataset.lineEnd || '0,0.5') : [0, 0.5];
+  if (car) car.style.transformOrigin = `${(lineEnd[0] * 100).toFixed(2)}% ${(lineEnd[1] * 100).toFixed(2)}%`;
   const narrowQuery = window.matchMedia('(max-width: 759px), (max-width: 999px) and (orientation: portrait)');
 
   // The tall "large viewport" height, so the phone's address bar sliding in
@@ -222,7 +229,7 @@
   probe.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:100vh;height:100lvh;visibility:hidden;pointer-events:none';
   document.body.append(probe);
 
-  const AHEAD = 3.3;  // how far ahead of the camera the line reaches, in F
+  const AHEAD = 2.8;  // how far ahead of the camera the line reaches, in F
   let W = 0;
   let H = 0;
   let F = 900;
@@ -235,6 +242,33 @@
   let total = 1;
   let portal = null;
   let numbersStop = null;
+  let carPiece = null; // the piece holding the car
+  let bendZ = 0;       // the line's first bend
+  let homeZ = 0;       // where the car waits on the line at the top of the page
+  let homeU = 1;       // how much scrolling turns it into the dot
+  let homeSize = 1;    // its size there (smaller where the screen is tight)
+  let carZ0 = 0;       // camera z where the line reaches its end: still the dot there …
+  let carZ1 = 1;       // … and where it arrives at Contact: the car by then
+  let home = null;     // the copy of the car that waits at the top
+  let opening = null;  // the opening's timing, while the line grows in
+
+  // ── The car and the dot ───────────────────────────────────────────────
+  // The line's blue dot is the car, far ahead. At the top of the page a copy
+  // of the car waits on the line below your name (when the page opens it
+  // drives in on the tip of the line and parks there), and the first bit of
+  // scrolling turns it into the dot. Near the end the dot turns back into the
+  // car, bit by bit as you scroll, from where the line reaches its end until
+  // the camera arrives at Contact. Scrolling back undoes both.
+  let carM = 0;  // the car at the end: 0 the dot … 1 the car
+  let homeM = 0; // the car at the top: 0 the dot … 1 the car
+  // Grows past full size a little, then settles
+  const backOut = (t) => { const x = clamp01(t) - 1; return 1 + 2.3 * x * x * x + 1.3 * x * x; };
+  // How the car and the dot look part-way through the change (m: 0 dot … 1 car)
+  const morphLook = (m) => ({
+    scale: m <= 0 ? 0 : backOut(smooth(m)),
+    solid: 1 - smooth((m - 0.2) / 0.5), // solid blue, like the dot, while small
+    dot: 1 - smooth(m * 2),              // the dot shrinks away as the car grows from it
+  });
 
   const build = () => {
     W = root.clientWidth;
@@ -307,11 +341,21 @@
       });
     });
 
+    // The line ends where the ribbon under the car begins, wherever and however
+    // big the car is on this screen. The drawing marks that point itself:
+    // data-line-end="x,y" as fractions of its box.
+    carPiece = car ? pieces.find((p) => p.el.contains(car)) || null : null;
+    if (carPiece) {
+      const [ex, ey] = lineEnd;
+      carPiece.s.ax = carPiece.x + ((ex - 0.5) * carPiece.el.offsetWidth) / W;
+      carPiece.s.ay = carPiece.y + ((ey - 0.5) * carPiece.el.offsetHeight) / H;
+    }
+
     // The camera's path: scroll position → z. It arrives a little short of
     // each stop, drifts slowly through the hold, then flies to the next.
     keys = [];
     let sc = 0;
-    const travel = (narrow ? 0.5 : 0.44) * H;
+    const travel = 0.44 * H;
     stops.forEach((s, i) => {
       if (i) sc += s.gap * travel;
       const lead = i === 0 || s.portal ? 0 : 0.11;
@@ -326,29 +370,37 @@
     spacer.style.height = `${Math.round(total + H)}px`;
 
     // The line: through each stop's data-line point. Between stops that are
-    // far apart it swings out to one side, alternating left and right. It
-    // starts just off the side of the screen, so on load it comes in to the name.
+    // far apart it swings out to one side, alternating left and right. The
+    // swing is scaled by the gap, so that from the parked camera it always
+    // reaches about the same place near the edge of the screen. It starts just
+    // off the side of the screen, so on load it comes in to the name.
     const pts = [];
     const first = stops[0];
     const side0 = first.ax >= 0 ? 1 : -1;
     pts.push({ z: first.z - 0.72 * F, x: (first.ax + 0.75 * side0) * W, y: (first.ay + 0.04) * H });
     let side = -side0;
     stops.forEach((s, i) => {
-      if (i && s.gap >= 2.2) {
+      if (i && s.gap >= 1.6) {
         const prev = stops[i - 1];
-        const [sx, sy] = s.swing || [side * (narrow ? 0.9 : 1.05), side < 0 ? 0.44 : -0.42];
+        const reach = 1 + s.gap / 2; // the swing point's distance from the parked camera, in F
+        const [sx, sy] = s.swing || [side * (narrow ? 0.36 : 0.42) * reach, (side < 0 ? 0.44 : -0.42) * reach / 2.5];
         side = -side;
         pts.push({ z: (prev.z + s.z) / 2, x: sx * W, y: sy * H });
       }
       pts.push({ z: s.z, x: s.ax * W, y: s.ay * H });
     });
     endZ = pts[pts.length - 1].z;
+    bendZ = pts.length > 2 ? pts[2].z : endZ;
 
     // A smooth curve through the points (x and y as functions of z)
     curve = [];
     const n = pts.length;
     const slope = (i, key) => {
-      if (i === 0 || i === n - 1) return 0;
+      if (i === 0) return 0;
+      // At the end the line arrives level, from the left, as seen from the
+      // parked camera (x/F, y/F keep a point still on screen as z grows), so
+      // it runs straight into the start of the ribbon instead of hooking into it
+      if (i === n - 1) return pts[i][key] / F + (key === 'x' ? 0.25 : 0);
       return (pts[i + 1][key] - pts[i - 1][key]) / Math.max(1, pts[i + 1].z - pts[i - 1].z);
     };
     for (let i = 0; i < n - 1; i++) {
@@ -373,6 +425,69 @@
     }
     curve.push({ z: pts[n - 1].z, x: pts[n - 1].x, y: pts[n - 1].y });
 
+    // The car at the top waits on the line's way in, before its first bend,
+    // as seen from the top of the page: with its nose under the start of your
+    // name (15% in from the edge it is heading for), or else at the nearest
+    // place along the line from there where it is clear of the words and the
+    // header on this screen. If there is no such place, it is a little smaller.
+    homeZ = bendZ - 0.25 * F;
+    homeSize = 1;
+    if (carPiece) {
+      const camZ = keys[0].z;
+      const w = carPiece.el.offsetWidth;
+      const h = carPiece.el.offsetHeight;
+      const near = camZ + 0.25 * F;
+      const far = bendZ - 0.2 * F;
+      const at = (z) => { const p = curveAt(z); const k = F / (z - camZ); return [W / 2 + p.x * k, H / 2 + p.y * k, k]; };
+      // The box around the car (and its ribbon) parked at z, mirrored and
+      // tilted to the line the way updateHome draws it
+      const carBox = (z, size = 1) => {
+        const [X, Y, k] = at(z);
+        const [Xb, Yb] = at(z - 0.01 * F);
+        const flip = X - Xb < 0 ? -1 : 1;
+        const a = clamp(Math.atan2(flip * (Y - Yb), flip * (X - Xb)), -0.5, 0.5);
+        const s = Math.min(k, 1.15) * size;
+        const xs = [];
+        const ys = [];
+        [[0.005, 0.04], [0.92, 0.04], [0.92, 0.9], [0.005, 0.9]].forEach(([fx, fy]) => {
+          const u = flip * (fx - lineEnd[0]) * w * s;
+          const v = (fy - lineEnd[1]) * h * s;
+          xs.push(X + u * Math.cos(a) - v * Math.sin(a));
+          ys.push(Y + u * Math.sin(a) + v * Math.cos(a));
+        });
+        return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), X - Xb];
+      };
+      const words = pieces.filter((p) => p.s === stops[0]).map((p) => {
+        const cx = W / 2 + p.x * W;
+        const cy = H / 2 + p.y * H;
+        const pw = p.el.offsetWidth / 2 + 8;
+        const ph = p.el.offsetHeight / 2 + 8;
+        return [cx - pw, cy - ph, cx + pw, cy + ph];
+      });
+      const clear = (z, size) => {
+        const b = carBox(z, size);
+        return b[0] >= 8 && b[2] <= W - 30 && b[1] >= headerRoom && b[3] <= H - 8
+          && words.every((r) => b[2] <= r[0] || b[0] >= r[2] || b[3] <= r[1] || b[1] >= r[3]);
+      };
+      let want = far;
+      for (let z = near; z < far; z += 0.01 * F) {
+        const b = carBox(z);
+        const nose = b[4] < 0 ? b[0] : b[2];
+        if (b[4] < 0 ? nose <= 0.15 * W : nose >= 0.85 * W) { want = z; break; }
+      }
+      homeZ = want;
+      homeSize = 0.6;
+      find: for (const size of [1, 0.9, 0.8, 0.7, 0.6]) {
+        for (let d = 0; d <= far - near; d += 0.01 * F) {
+          const z = [want - d, want + d].find((c) => c >= near && c <= far && clear(c, size));
+          if (z !== undefined) { homeZ = z; homeSize = size; break find; }
+        }
+      }
+    }
+    homeU = Math.max(1, stops[0].holdPx + 0.15 * H); // the hold at the top, and a little of the flight on
+    carZ0 = endZ - AHEAD * F;
+    carZ1 = keys[keys.length - 2].z;
+
     // Ticks on the progress rail for the main stops
     hudTicks.textContent = '';
     stops.filter((s) => s.hud).forEach((s) => {
@@ -394,6 +509,22 @@
       }
     }
     return keys[keys.length - 1].z;
+  };
+
+  // The line's point at depth z (the curve is sampled in order of z)
+  const curveAt = (z) => {
+    let lo = 0;
+    let hi = curve.length - 1;
+    if (z <= curve[lo].z) return curve[lo];
+    if (z >= curve[hi].z) return curve[hi];
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (curve[mid].z <= z) lo = mid; else hi = mid;
+    }
+    const a = curve[lo];
+    const b = curve[hi];
+    const t = (z - a.z) / Math.max(1e-6, b.z - a.z);
+    return { z, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
   };
 
   // ── Colours: the whole page fades to dark around the dark stops ────────
@@ -452,7 +583,7 @@
       const Y = cy + p.y * k;
       if (prev) {
         if (Math.abs(X - prev.X) + Math.abs(Y - prev.Y) < 1 && p.z < tipZ) continue;
-        const a = Math.round(smooth((dz - near) / (0.3 * F)) * (1 - 0.8 * smooth((dz - 1.2 * F) / Math.max(1, ahead - 1.2 * F))) * 40) / 40;
+        const a = Math.round(smooth((dz - near) / (0.3 * F)) * (1 - 0.8 * smooth((dz - 1.2 * F) / ((AHEAD - 1.2) * F))) * 40) / 40;
         const w = Math.round(clamp(2.4 * k, 0.6, 7) * 4) / 4;
         if (a <= 0) {
           if (run) { ctx.stroke(); run = null; }
@@ -474,10 +605,13 @@
     }
     if (run) ctx.stroke();
     ctx.globalAlpha = 1;
+    // The tip: the blue dot. It hands over to the car while the car is on screen:
+    // at the end of the line, and while the opening car rides the tip.
     if (!tip) return;
-    // The tip; at the very end of the line it becomes a bigger dot
-    const end = tipZ >= endZ - 1;
-    const r = end ? clamp(10 * tip.k, 6, 20) : clamp(5 * tip.k, 2.5, 14);
+    let dot = tipZ >= endZ - 1 ? morphLook(carM).dot : 1;
+    if (home) dot = Math.min(dot, 1 - smooth(homeM / 0.25)); // the car only becomes the dot at the end of its drive
+    if (dot < 0.01) return;
+    const r = clamp(5 * tip.k, 2.5, 14) * dot;
     ctx.fillStyle = lineColor;
     ctx.beginPath();
     ctx.arc(tip.X, tip.Y, r, 0, Math.PI * 2);
@@ -511,6 +645,8 @@
           ? 1 - smooth((o - 0.45 * p.fade) / (0.55 * p.fade))
           : 1 - smooth((-o - 0.22 * F) / (0.42 * F));
       }
+      // The car is there as soon as the dot has turned into it, however far away
+      if (p === carPiece) alpha = r > 0.16 * F && carM > 0.001 ? 1 : 0;
       if (alpha < 0.01) {
         if (p.shown) {
           p.shown = false;
@@ -545,7 +681,8 @@
     const s0 = portal.holdStart;
     const len = portal.holdPx;
     const open = smooth((sc - (s0 - 0.75 * H)) / (1.05 * H));
-    const close = smooth((sc - (s0 + len - 1.05 * H)) / H);
+    // It shrinks away as the camera leaves, while the first project arrives
+    const close = smooth((sc - (s0 + len - 0.7 * H)) / H);
     if (open <= 0 || close >= 1) {
       if (portalOn) {
         portalOn = false;
@@ -633,6 +770,122 @@
     history.pushState(null, '', hash === '#top' ? location.pathname + location.search : hash);
   });
 
+  // ── The car at the end ────────────────────────────────────────────────
+  // It grows out of the dot from the start of its ribbon, where the line
+  // ends, and shrinks back into it if you scroll back.
+  let carShown = '';
+  const updateCar = () => {
+    if (!carPiece) return;
+    const key = carM.toFixed(3);
+    if (key === carShown) return;
+    carShown = key;
+    const look = morphLook(carM);
+    car.style.transform = carM >= 1 ? '' : `scale(${look.scale.toFixed(4)})`;
+    car.style.setProperty('--solid', look.solid.toFixed(3));
+  };
+
+  // ── The opening ───────────────────────────────────────────────────────
+  // When the page opens at the top, the line grows in with the car on its tip
+  // and the car parks at its place below your name (homeZ). The tip moves at
+  // an even pace on screen (stretches off-screen are squeezed to the edge, so
+  // no time is spent there) and slows down as the car parks.
+  const OPENING = 2.2; // seconds
+  const planOpening = () => {
+    const camZ = cameraZ(camS);
+    const z0 = camZ + 0.1 * F;
+    const z1 = Math.max(z0 + 0.01 * F, homeZ);
+    const table = [];
+    let len = 0;
+    let last = null;
+    for (let i = 0; i <= 240; i++) {
+      const z = z0 + ((z1 - z0) * i) / 240;
+      const p = curveAt(z);
+      const k = F / (z - camZ);
+      const X = clamp(W / 2 + p.x * k, -0.1 * W, 1.1 * W);
+      const Y = clamp(H / 2 + p.y * k, -0.1 * H, 1.1 * H);
+      if (last) len += Math.hypot(X - last[0], Y - last[1]);
+      last = [X, Y];
+      table.push({ z, len });
+    }
+    opening = { table, len };
+  };
+  // Where the tip has got to t seconds into the opening
+  const openingZ = (t) => {
+    const { table, len } = opening;
+    const want = smooth(t / OPENING) * len;
+    let lo = 0;
+    let hi = table.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (table[mid].len < want) lo = mid; else hi = mid;
+    }
+    const a = table[lo];
+    const b = table[hi];
+    const u = b.len > a.len ? clamp01((want - a.len) / (b.len - a.len)) : 1;
+    return a.z + (b.z - a.z) * u;
+  };
+
+  // ── The car at the top ────────────────────────────────────────────────
+  // A copy of the car, on the tip of the line: parked below your name, or on
+  // its way in while the page opens.
+  const sizeHome = () => {
+    if (!home) return;
+    home.w = home.el.offsetWidth;
+    home.h = home.el.offsetHeight;
+  };
+  const makeHome = () => {
+    const el = document.createElement('div');
+    el.className = 'car-home';
+    el.setAttribute('aria-hidden', 'true');
+    const svg = car.cloneNode(true);
+    svg.removeAttribute('style');
+    el.append(svg);
+    worldEl.prepend(el); // below every piece, above the line
+    home = { el, face: -1, angle: 0, fit: 1, w: 0, h: 0, shown: false };
+    sizeHome();
+  };
+  const updateHome = (camZ, tipZ, dt) => {
+    const h = home;
+    if (homeM <= 0.001 || tipZ <= camZ + 0.12 * F) {
+      if (h.shown) { h.shown = false; h.el.style.visibility = 'hidden'; }
+      return;
+    }
+    const p = curveAt(tipZ);
+    const k = F / (tipZ - camZ);
+    const X = W / 2 + p.x * k;
+    const Y = H / 2 + p.y * k;
+    // It faces the way the line runs on, tilted along it. It is drawn facing
+    // right, so it is mirrored where the line runs left; where the line turns
+    // back on itself, it turns round in one go (never squeezed).
+    const zb = Math.max(camZ + 0.11 * F, tipZ - 0.03 * F);
+    const b = curveAt(zb);
+    const kb = F / (zb - camZ);
+    const dX = X - (W / 2 + b.x * kb);
+    const dY = Y - (H / 2 + b.y * kb);
+    const d = Math.hypot(dX, dY);
+    if (d > 0.05) {
+      const c = dX / d;
+      if (homeM >= 0.999) h.face = c < 0 ? -1 : 1;
+      else if (h.face < 0 ? c > 0.08 : c < -0.08) h.face = -h.face;
+      const want = clamp(Math.atan2(h.face * dY, h.face * dX), -0.5, 0.5);
+      h.angle += (want - h.angle) * (opening && h.shown ? 1 - Math.exp(-dt * 12) : 1);
+    }
+    // As it drives on into the dot it gets smaller, toward the start of its
+    // ribbon, where the line ends, turning solid blue toward the end. Where a
+    // bend comes close to the edge of the screen it gets smaller sooner, so
+    // its nose stays on screen (and it doesn't grow back on the way on).
+    if (homeM >= 0.999) h.fit = 1;
+    let s = Math.min(k, 1.15) * homeSize * Math.pow(homeM, 0.7);
+    const room = (h.face < 0 ? X : W - X) - 6;
+    h.fit = Math.min(h.fit, clamp(room / (0.92 * h.w * Math.max(s, 1e-3) * Math.cos(h.angle)), 0.25, 1));
+    s *= h.fit;
+    const flip = h.face;
+    const solid = 1 - smooth((homeM - 0.15) / 0.45);
+    h.el.style.transform = `translate3d(${X.toFixed(1)}px,${Y.toFixed(1)}px,0) rotate(${h.angle.toFixed(4)}rad) scale(${(flip * s).toFixed(4)},${s.toFixed(4)}) translate(${(-lineEnd[0] * h.w).toFixed(1)}px,${(-lineEnd[1] * h.h).toFixed(1)}px)`;
+    h.el.style.setProperty('--solid', solid.toFixed(3));
+    if (!h.shown) { h.shown = true; h.el.style.visibility = 'visible'; }
+  };
+
   // ── The loop ──────────────────────────────────────────────────────────
   // The page scrolls natively; the camera eases after the scroll position,
   // faster across long jumps, so everything glides.
@@ -649,15 +902,44 @@
     const diff = target - camS;
     camS += diff * (1 - Math.exp(-dt * (Math.abs(diff) > 3 * H ? 9 : 5.5)));
     if (Math.abs(target - camS) < 0.3) camS = target;
-    ahead = AHEAD * F * smooth((now - introAt - 250) / 1700);
+    const t = (now - introAt - 250) / 1000;
+    if (opening && t >= OPENING) opening = null;
+    const camZ = cameraZ(camS);
+    // The line's tip. It keeps a little way ahead of the camera (on load it
+    // grows out to there). At the top of the page it is where the car waits,
+    // or where the car has got to on its way in while the page opens; the
+    // first bit of scrolling turns the car into the dot and sends it on ahead.
+    const lead = camZ + AHEAD * F * (opening ? 1 : smooth(t / 1.7));
+    let tipZ = lead;
+    homeM = 0;
+    if (home) {
+      // It moves off at once and eases in to the dot's place, getting smaller
+      // all the way: by the time it gets there it is the dot
+      const u = clamp01(camS / homeU);
+      const go = 1 - (1 - u) * (1 - u);
+      const rest = opening ? openingZ(Math.max(0, t)) : homeZ;
+      tipZ = rest + (lead - rest) * go;
+      homeM = 1 - go;
+    }
+    ahead = tipZ - camZ;
+    // Near the end the dot turns into the car as you scroll: still the dot where
+    // the line reaches its end, the car by the time the camera arrives at
+    // Contact. (If the page opens there, it pops out once the line grows in.)
+    const carWant = camZ + ahead >= endZ - 1 ? smooth((camZ - carZ0) / (0.75 * (carZ1 - carZ0))) : 0;
+    if (carM !== carWant) {
+      carM += (carWant - carM) * (1 - Math.exp(-dt * 8));
+      if (Math.abs(carWant - carM) < 0.002) carM = carWant;
+      dirty = true;
+    }
     if (dirty || camS !== lastS || ahead !== lastAhead) {
       dirty = false;
       lastS = camS;
       lastAhead = ahead;
-      const camZ = cameraZ(camS);
       theme(camZ);
+      if (home) updateHome(camZ, Math.min(tipZ, endZ), dt);
       drawLine(camZ);
       placePieces(camZ);
+      updateCar();
       updatePortal(camS, camZ);
       updateCounters(camZ);
       updateHud(camS);
@@ -671,6 +953,8 @@
     const y = progress * total;
     window.scrollTo(0, y);
     camS = y;
+    if (opening) planOpening();
+    sizeHome();
     dirty = true;
   };
   let resizeTimer = 0;
@@ -692,5 +976,10 @@
   const startY = startStop && startStop !== stops[0] ? startStop.holdStart + 2 : 0;
   window.scrollTo(0, startY);
   camS = startY;
+  // The car at the top; when the page opens there, it drives in on the line
+  if (car && worldEl) {
+    makeHome();
+    if (startY === 0) planOpening();
+  }
   requestAnimationFrame(frame);
 })();

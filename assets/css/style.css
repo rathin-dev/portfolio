@@ -225,9 +225,9 @@ html.hud-dark .hud-fill, html.hud-dark .hud-dot { background: var(--blue-light);
   100% { transform: scaleY(0); transform-origin: bottom; }
 }
 
-/* About: the portrait is a ready-made black-dot halftone on a transparent background */
-.halftone { width: min(430px, 100%); }
-.halftone img { width: 100%; }
+/* About: the portrait is a colour photo on a transparent background, fading out at the chest */
+.portrait { width: min(430px, 100%); }
+.portrait img { width: 100%; }
 .about-text h2 {
   margin: 14px 0 24px;
   font-family: var(--display);
@@ -443,14 +443,29 @@ html.hud-dark .hud-fill, html.hud-dark .hud-dot { background: var(--blue-light);
 .contact-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; }
 .contact-foot a, .contact-foot > span { padding: 10px 0; font-size: 10.5px; color: var(--muted); text-decoration: none; }
 .contact-foot a:hover { color: var(--ink); }
-.plane { display: block; width: clamp(54px, 6vw, 96px); }
-.plane-g { transform-box: fill-box; transform-origin: center; animation: drift 6s ease-in-out infinite; }
-.plane-body { fill: var(--blue); }
-.plane-fold { fill: #1626A8; }
-@keyframes drift {
-  0%, 100% { transform: translate(0, 0) rotate(-6deg); }
-  50% { transform: translate(-8px, -12px) rotate(-2deg); }
+/* The end of the line: it swells into a ribbon under a faceted supercar. main.js
+   ends the line exactly where the ribbon starts (data-line-end on the svg), turns
+   the line's blue dot into the car near the end, and keeps a copy of the car
+   on the line at the top of the page (.car-home). Lengths inside the svg are
+   in the drawing's own units: it is 1902 wide, so 12px here is about 1.5px. */
+.car { display: block; width: clamp(200px, 18vw, 320px); overflow: visible; }
+.car-ribbon { fill: var(--blue); }
+.car-ride { animation: ride 1.6s ease-in-out infinite; }
+@keyframes ride { 50% { transform: translateY(-12px); } }
+/* While it turns into the dot or back, the car is solid blue, like the dot */
+.car-solid { fill: var(--blue); stroke: var(--blue); stroke-width: 2; fill-rule: evenodd; opacity: var(--solid, 0); }
+/* Smoke from the back tyre: low-poly puffs roll back along the ribbon and rise */
+.car-smoke { opacity: calc(1 - var(--solid, 0)); }
+.car-puff { opacity: 0; animation: puff 1.3s linear infinite; animation-delay: var(--d, 0s); }
+.puff-a { fill: #C2C8F5; }
+.puff-b { fill: #A3ADEF; }
+@keyframes puff {
+  0% { transform: translate(565px, 452px) scale(.6) rotate(0deg); opacity: 0; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  7% { opacity: 1; }
+  40% { transform: translate(330px, 452px) scale(1.6) rotate(25deg); opacity: 1; animation-timing-function: cubic-bezier(.3, .3, .5, 1); }
+  100% { transform: translate(var(--x), var(--y)) scale(var(--s)) rotate(var(--r)); opacity: 0; }
 }
+.car-home { position: fixed; left: 0; top: 0; z-index: 1; visibility: hidden; transform-origin: 0 0; pointer-events: none; }
 
 /* ── The ordinary page (reduced motion or no JavaScript) ──────────────── */
 html:not(.world) .stop {
@@ -501,7 +516,7 @@ html:not(.world) .stop--contact {
   display: flex; flex-direction: column; align-items: center; gap: 26px;
   min-height: 100vh; min-height: 100svh; justify-content: center;
 }
-html:not(.world) .plane-p { position: absolute; right: 13%; top: 19%; }
+html:not(.world) .car-p { position: absolute; right: 12%; top: 11%; }
 html:not(.world) .contact-foot { margin-top: clamp(40px, 10vh, 110px); }
 
 @media (max-width: 900px) {
@@ -517,6 +532,7 @@ html:not(.world) .contact-foot { margin-top: clamp(40px, 10vh, 110px); }
   html:not(.world) .scroll-cue { display: none; }
   .contact-title { white-space: normal; }
   .mandli-points { grid-template-columns: 1fr; }
+  html:not(.world) .car-p { position: static; align-self: flex-end; }
 }
 
 /* ── The 3D world ─────────────────────────────────────────────────────── */
@@ -550,22 +566,29 @@ html:not(.world) .contact-foot { margin-top: clamp(40px, 10vh, 110px); }
 .world .hero-line--a { transform: translate3d(calc(var(--leave, 0) * -13vw), 0, 0); }
 .world .hero-line--b { transform: translate3d(calc(var(--leave, 0) * 13vw), 0, 0); }
 /* Screenshots zoom out to their frame as they arrive */
-.world .project-media img { transform: scale(calc(1.04 + var(--far, 0) * .3)); }
-/* Blocks of reading text sit on a backing in the page colour, so the line
-   passes behind them (as it does behind the screenshots) instead of showing
-   between the words. The big display words stay see-through. */
+.world .project-media img { transform: scale(calc(1 + var(--far, 0) * .3)); }
+/* Blocks of text are see-through, so the line can be seen passing behind
+   them (only the screenshots hide it). They keep a little padding, which the
+   layout of each stop was measured with. */
 .world .hero-intro, .world .about-text, .world .stat, .world .milestone-body,
 .world .services-detail, .world .how, .world .work-count, .world .project-card,
 .world .contact-email-row, .world .contact-note, .world .contact-foot {
-  background: var(--bg);
   padding: 14px 18px;
 }
 .world .project-card { padding: 0 0 6px; }
+/* Where the line does pass behind text, a soft outline in the page colour keeps
+   the letters clear of it: the line fades out just around them instead of
+   running through the words */
+.world .hero-intro, .world .about-text, .world .stat, .world .milestone-body,
+.world .services-detail, .world .how, .world .work-count, .world .project-info,
+.world .contact-email-row, .world .contact-note, .world .contact-foot {
+  text-shadow: 0 0 1px var(--bg), 0 0 3px var(--bg), 0 0 6px var(--bg), 0 0 10px var(--bg);
+}
 .world .contact-email-row, .world .contact-note, .world .contact-foot { padding: 8px 14px; }
 
 /* Sizes: each stop has to fit one screen while the camera is parked */
 .world .hero-intro { width: min(380px, 32vw); }
-.world .halftone { width: min(430px, 29vw, 50vh); }
+.world .portrait { width: min(430px, 29vw, 50vh); }
 .world .about-text { width: min(520px, 37vw); }
 .world .about-text h2 { font-size: clamp(40px, min(5.4vw, 9vh), 92px); margin: 10px 0 18px; }
 .world .about-text p:not(.label) { font-size: clamp(14px, min(1.15vw, 2vh), 17px); }
@@ -633,7 +656,7 @@ html:not(.world) .contact-foot { margin-top: clamp(40px, 10vh, 110px); }
   .world .hero-line--a { transform: translate3d(0, calc(var(--leave, 0) * -8vh), 0); }
   .world .hero-line--b { transform: translate3d(0, calc(var(--leave, 0) * 8vh), 0); }
   .world .hero-intro { width: 84vw; }
-  .world .halftone { width: min(50vw, 26vh); }
+  .world .portrait { width: min(50vw, 26vh); }
   .world .about-text { width: 86vw; }
   .world .about-text h2 { font-size: 10.5vw; margin: 8px 0 12px; }
   .world .about-text p:not(.label) { font-size: 14px; line-height: 1.55; }

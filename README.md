@@ -28,7 +28,7 @@ Any static host works. On Vercel, import the folder as a new project with framew
 The page is a row of **stops** (`<section data-stop>`) along the blue line. With motion allowed, `main.js` turns it into a 3D world, on phones too:
 
 - The stops sit one behind another in depth. Scrolling flies a camera along the line: it parks in front of each stop for a moment, then flies on to the next. The browser scrolls normally (an empty spacer gives the page its length) and the camera glides after it.
-- The blue line is a 3D curve drawn on one canvas. It passes through a chosen point at each stop, and between stops that are far apart it swings out to one side, alternating left and right. It is thick and solid near you and thin and faint in the distance, and its tip stays a little way ahead of you, so the line keeps leading on. On load it comes in from the side to your name.
+- The blue line is a 3D curve drawn on one canvas. It passes through a chosen point at each stop, and between stops that are far apart it swings out to one side, alternating left and right. It is thick and solid near you and thin and faint in the distance, and its tip, a blue dot, stays a little way ahead of you, so the line keeps leading on. The dot is the car from Contact, far ahead. When the page opens at the top, the line comes in from the side with the car on its tip, and the car parks below your name. As you start scrolling it drives on along the line, getting smaller as it goes, turns round at the bend and climbs between the two words of your name, and by the time it gets there it has become the dot. Near the end, from where the line reaches its end, the dot turns back into the car bit by bit as you scroll, and by the time you reach Contact it is the car. Scrolling back undoes both.
 - Each stop's **pieces** (elements with `data-at`) float around the line. While far ahead they are small, faded, waiting to one side and turned; they settle at their place as the camera parks, then grow and fade as you fly past.
 - Around the dark stops (`data-dark`) the colours of the whole page fade to dark.
 - Mandli (`data-portal`) opens out of the line as a purple circle that fills the screen, then shrinks away like a card. On a short screen its content scrolls through while the camera holds.
@@ -49,7 +49,7 @@ On a piece:
 
 `style.css` uses three numbers that `main.js` puts on every piece: `--far` (1 while far ahead, 0 when parked), `--arrive` and `--leave`. The words of headings marked `data-split` use `--far` to settle into place, the two words of the name use `--leave` to part as you fly on, and the screenshots use `--far` to zoom into their frame.
 
-Blocks of reading text sit on a backing in the page colour, so the line passes behind them instead of showing between the words; the big display words stay see-through.
+All the text is see-through, so the line can be seen passing behind it; only the screenshots hide the line. The line is routed so it doesn't run across any text: a few stops have their own `data-line` / `data-swing` for that, so if you move a stop's pieces or its line, check the line still stays clear of the words. Where the thin far end of the line does pass behind text (mostly on phones, where the text fills the screen), a soft outline in the page colour around the letters keeps them clear of it.
 
 ## Common edits
 
@@ -61,7 +61,9 @@ Blocks of reading text sit on a backing in the page colour, so the line passes b
 
 **Changing where things sit.** Move a piece with its `data-at`, then check that the stop still fits one screen and that the line runs clear of it, from about 1024×600 up to large screens, and on a phone.
 
-**Your photo.** The About section shows your portrait as a black-dot halftone with the background removed (`assets/img/rathin-halftone.webp`). To change it, replace that file with another transparent image of the same kind: a photo on a plain background works best with the dot effect.
+**Your photo.** The About section shows your portrait in colour with the background removed (`assets/img/rathin-photo.webp`, 760×685, fading out at the chest). To change it, replace that file with another transparent image of the same size.
+
+**The car.** The line ends in a ribbon under the faceted supercar in Contact (the `<svg class="car">`). Its `data-line-end="x,y"` marks where the ribbon starts, as fractions of the drawing: the line is ended exactly there, and the car grows out of the dot from there. Don't give the car's piece a `data-depth`: it has to stay in the same plane as the end of the line, or the two drift apart as the camera moves. The smoke from its back tyre is the `car-puff` groups at the end of the drawing; how they roll back and rise is `@keyframes puff` in `style.css`. The car at the top of the page is a copy `main.js` makes of this drawing, so changes to it show in both places. It parks with its nose under the start of your name; on screens where that would touch the words or the header, it parks at the nearest clear place along the line, a little smaller if it has to.
 
 ## Before you publish
 
