@@ -242,6 +242,8 @@
   let total = 1;
   let portal = null;
   let numbersStop = null;
+  let hudH = 0;   // the progress rail's height (measured in build, not every frame)
+  let panelH = 0; // the height of Mandli's content (measured once it shows)
   let carPiece = null; // the piece holding the car
   let bendZ = 0;       // the line's first bend
   let homeZ = 0;       // where the car waits on the line at the top of the page
@@ -326,6 +328,7 @@
         if (narrow) at = p.hasAttribute('data-at-m') ? pair(p.dataset.atM) : place.get(p);
         const depth = num(p.dataset.depth, 0);
         const [dx, dy] = pair(p.dataset.drift);
+        const shown = p.style.visibility === 'visible'; // (as left by a previous build)
         pieces.push({
           el: p, s, depth,
           x: at[0], y: at[1],
@@ -334,8 +337,13 @@
           dx: narrow ? dx * 0.5 : dx, dy,
           turn: narrow ? 0 : num(p.dataset.turn, 0),
           fade: clamp(s.gap * 0.82, 1, 1.7) * F,  // how far ahead it starts to appear
-          shown: false, live: false, vars: {},
+          shown, live: false, vars: {},
+          // Only the variables style.css reads from a piece are written to it:
+          // each write restyles everything inside the piece
+          usesFar: p.matches('[data-split]') || !!p.querySelector('[data-split], .project-media'),
+          usesLeave: !!p.querySelector('.hero-line'),
         });
+        p.classList.toggle('is-off', !shown);
         // Nearer stops, and nearer pieces within a stop, are drawn on top
         p.style.zIndex = String(1000 - s.i * 10 - Math.round(depth * 4));
       });
@@ -489,10 +497,12 @@
     carZ1 = keys[keys.length - 2].z;
 
     // Ticks on the progress rail for the main stops
+    hudH = hud.offsetHeight;
+    panelH = 0;
     hudTicks.textContent = '';
     stops.filter((s) => s.hud).forEach((s) => {
       const tick = document.createElement('i');
-      tick.style.top = `${(clamp01(s.holdStart / Math.max(1, total)) * hud.offsetHeight).toFixed(1)}px`;
+      tick.style.top = `${(clamp01(s.holdStart / Math.max(1, total)) * hudH).toFixed(1)}px`;
       hudTicks.append(tick);
     });
   };
@@ -540,7 +550,9 @@
       const u = s.z - camZ - F; // 0 while parked at it; > 0 still ahead
       d = Math.max(d, Math.min(1 - smooth((u - 0.6 * F) / (0.8 * F)), 1 - smooth((-u - 0.9 * F) / (0.6 * F))));
     });
-    if (Math.abs(d - darkness) < 0.003) return;
+    // In 48 steps: each change restyles the whole page, so not on every frame
+    d = Math.round(d * 48) / 48;
+    if (d === darkness) return;
     darkness = d;
     Object.keys(LIGHT).forEach((name) => {
       const c = mixRGB(LIGHT[name], DARK[name], d);
@@ -653,6 +665,7 @@
           p.live = false;
           p.el.style.visibility = 'hidden';
           p.el.style.pointerEvents = 'none';
+          p.el.classList.add('is-off'); // its animations pause while it is out of sight
         }
         return;
       }
@@ -660,12 +673,11 @@
       const scale = p.d / r;
       const x = (p.x + p.dx * far) * W;
       const y = (p.y + p.dy * far) * H;
-      if (!p.shown) { p.shown = true; p.el.style.visibility = 'visible'; }
+      if (!p.shown) { p.shown = true; p.el.style.visibility = 'visible'; p.el.classList.remove('is-off'); }
       p.el.style.opacity = alpha.toFixed(3);
       p.el.style.transform = `translate3d(${(cx + x * scale).toFixed(1)}px,${(cy + y * scale).toFixed(1)}px,0) translate(-50%,-50%) perspective(1100px) rotateY(${(p.turn * far).toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-      setVar(p, '--far', far.toFixed(3));
-      setVar(p, '--arrive', clamp01((0.55 * F - o) / (0.65 * F)).toFixed(3));
-      setVar(p, '--leave', smooth((-o - 0.03 * F) / (0.38 * F)).toFixed(3));
+      if (p.usesFar) setVar(p, '--far', far.toFixed(3));
+      if (p.usesLeave) setVar(p, '--leave', smooth((-o - 0.03 * F) / (0.38 * F)).toFixed(3));
       const live = alpha > 0.6 && scale < 1.6;
       if (live !== p.live) { p.live = live; p.el.style.pointerEvents = live ? 'auto' : 'none'; }
     });
@@ -711,7 +723,8 @@
     flies.forEach((el, i) => el.style.setProperty('--q', (1 - smooth(t * 1.6 - i * 0.12)).toFixed(3)));
     // Too tall for the screen (phones): the content scrolls through while the camera holds
     const room = H - 112;
-    const over = Math.max(0, panelContent.offsetHeight - room);
+    if (!panelH) panelH = panelContent.offsetHeight;
+    const over = Math.max(0, panelH - room);
     const read = clamp01((sc - (s0 + 0.25 * H)) / Math.max(1, len - 1.4 * H));
     panelContent.style.transform = over ? `translate3d(0,${(over / 2 + 24 - (over + 24) * read).toFixed(1)}px,0)` : '';
     portalEl.style.pointerEvents = open > 0.98 && close < 0.2 ? 'auto' : 'none';
@@ -745,7 +758,7 @@
 
   // ── Progress rail ─────────────────────────────────────────────────────
   const updateHud = (sc) => {
-    const dotY = clamp01(sc / Math.max(1, total)) * hud.offsetHeight;
+    const dotY = clamp01(sc / Math.max(1, total)) * hudH;
     hud.style.setProperty('--hud-y', `${dotY.toFixed(1)}px`);
     let current = stops[0];
     stops.forEach((s) => { if (s.hud && s.holdStart <= sc + 0.6 * H) current = s; });
@@ -774,6 +787,7 @@
   // It grows out of the dot from the start of its ribbon, where the line
   // ends, and shrinks back into it if you scroll back.
   let carShown = '';
+  let carSolid = '';
   const updateCar = () => {
     if (!carPiece) return;
     const key = carM.toFixed(3);
@@ -781,7 +795,8 @@
     carShown = key;
     const look = morphLook(carM);
     car.style.transform = carM >= 1 ? '' : `scale(${look.scale.toFixed(4)})`;
-    car.style.setProperty('--solid', look.solid.toFixed(3));
+    const sv = look.solid.toFixed(2);
+    if (sv !== carSolid) { carSolid = sv; car.style.setProperty('--solid', sv); }
   };
 
   // ── The opening ───────────────────────────────────────────────────────
@@ -835,7 +850,7 @@
   };
   const makeHome = () => {
     const el = document.createElement('div');
-    el.className = 'car-home';
+    el.className = 'car-home is-off';
     el.setAttribute('aria-hidden', 'true');
     const svg = car.cloneNode(true);
     svg.removeAttribute('style');
@@ -847,7 +862,7 @@
   const updateHome = (camZ, tipZ, dt) => {
     const h = home;
     if (homeM <= 0.001 || tipZ <= camZ + 0.12 * F) {
-      if (h.shown) { h.shown = false; h.el.style.visibility = 'hidden'; }
+      if (h.shown) { h.shown = false; h.el.style.visibility = 'hidden'; h.el.classList.add('is-off'); }
       return;
     }
     const p = curveAt(tipZ);
@@ -882,8 +897,9 @@
     const flip = h.face;
     const solid = 1 - smooth((homeM - 0.15) / 0.45);
     h.el.style.transform = `translate3d(${X.toFixed(1)}px,${Y.toFixed(1)}px,0) rotate(${h.angle.toFixed(4)}rad) scale(${(flip * s).toFixed(4)},${s.toFixed(4)}) translate(${(-lineEnd[0] * h.w).toFixed(1)}px,${(-lineEnd[1] * h.h).toFixed(1)}px)`;
-    h.el.style.setProperty('--solid', solid.toFixed(3));
-    if (!h.shown) { h.shown = true; h.el.style.visibility = 'visible'; }
+    const sv = solid.toFixed(2);
+    if (sv !== h.solid) { h.solid = sv; h.el.style.setProperty('--solid', sv); }
+    if (!h.shown) { h.shown = true; h.el.style.visibility = 'visible'; h.el.classList.remove('is-off'); }
   };
 
   // ── The loop ──────────────────────────────────────────────────────────

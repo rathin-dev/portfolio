@@ -289,6 +289,9 @@ html.hud-dark .hud-fill, html.hud-dark .hud-dot { background: var(--blue-light);
   animation: twinkle var(--t) ease-in-out infinite alternate;
 }
 @keyframes twinkle { to { opacity: calc(var(--o) * .25); } }
+/* On touch screens (phones, tablets) the stars hold still: 90 twinkling stars
+   repaint the whole screen every frame, which makes scrolling there stutter */
+@media (hover: none) { .stars i { animation: none; } }
 .services-detail {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 44px;
   padding-top: 28px;
@@ -550,10 +553,13 @@ html:not(.world) .contact-foot { margin-top: clamp(40px, 10vh, 110px); }
 .world .stop, .world .cloud, .world .work-title { display: contents; }
 
 /* Every piece is its own layer. main.js places it each frame with
-   translate3d + scale (perspective), and publishes:
+   translate3d + scale (perspective), and publishes, only to the pieces that
+   use them (split headings and screenshots; the hero name):
      --far     1 while it is far ahead, 0 once the camera is parked at its stop
-     --arrive  0 → 1 as it arrives
-     --leave   0 → 1 as the camera flies past it */
+     --leave   0 → 1 as the camera flies past it
+   While a piece is out of sight it has .is-off, and the animations inside it
+   (the stars, the car's smoke) pause. */
+.world .is-off, .world .is-off * { animation-play-state: paused !important; }
 .world .piece {
   position: fixed; left: 0; top: 0;
   visibility: hidden; opacity: 0; pointer-events: none;
@@ -582,7 +588,8 @@ html:not(.world) .contact-foot { margin-top: clamp(40px, 10vh, 110px); }
 .world .hero-intro, .world .about-text, .world .stat, .world .milestone-body,
 .world .services-detail, .world .how, .world .work-count, .world .project-info,
 .world .contact-email-row, .world .contact-note, .world .contact-foot {
-  text-shadow: 0 0 1px var(--bg), 0 0 3px var(--bg), 0 0 6px var(--bg), 0 0 10px var(--bg);
+  /* two soft shadows: on phones each extra one costs smoothness when scrolling */
+  text-shadow: 0 0 2px var(--bg), 0 0 6px var(--bg);
 }
 .world .contact-email-row, .world .contact-note, .world .contact-foot { padding: 8px 14px; }
 
