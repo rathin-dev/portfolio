@@ -442,6 +442,20 @@ html.hud-dark .hud-fill, html.hud-dark .hud-dot { background: var(--blue-light);
   transition: background-color .25s, color .25s;
 }
 .copy-btn:hover { background: var(--ink); color: var(--bg); }
+/* WhatsApp: the same pill as "Copy email", filled, as the quickest way to get in touch */
+.wa-btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  min-height: 44px; padding: 0 20px;
+  border-radius: 999px; background: var(--ink); color: var(--bg);
+  font-size: 10.5px; text-decoration: none;
+  text-shadow: none; /* the page-colour outline around text is for text on the page, not on this fill */
+  transition: background-color .25s;
+}
+.wa-btn .arrow { width: 24px; stroke: currentColor; }
+@media (hover: hover) {
+  .wa-btn:hover { background: var(--blue); color: #fff; }
+  .wa-btn:hover .arrow { transform: translateX(4px); }
+}
 .contact-note { max-width: 46ch; color: var(--ink-2); text-align: center; }
 .contact-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; }
 .contact-foot a, .contact-foot > span { padding: 10px 0; font-size: 10.5px; color: var(--muted); text-decoration: none; }

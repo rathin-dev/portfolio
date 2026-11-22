@@ -6,7 +6,12 @@ A one-page static site: plain HTML, CSS and JavaScript, with no build step and n
 index.html            the whole page
 assets/css/style.css  styles
 assets/js/main.js     the 3D world (camera, blue line, pieces), the progress rail, the menu, counters
-assets/img/           screenshots, app icon, portrait, favicon, link-preview image (og.jpg)
+assets/img/           screenshots, app icon, portrait, link-preview image (og.jpg), and the site's
+                      icons: favicon.svg + favicon-32.png (browser tab), apple-touch-icon.png
+                      (iPhone home screen), icon-192/512.png (Android, via site.webmanifest)
+robots.txt            tells search engines they may index the site, and where the sitemap is
+sitemap.xml           the page's address, for search engines
+site.webmanifest      name, colours and icons for "Add to Home screen"
 ```
 
 The page still works with JavaScript off: every section shows as an ordinary page and every link works. Visitors who have "reduce motion" switched on in their system settings get that same ordinary page, with nothing moving.
@@ -55,6 +60,8 @@ All the text is see-through, so the line can be seen passing behind it; only the
 
 **Changing a project's link.** Each project has its address twice: on the screenshot and on its "Visit site" link. Change both.
 
+**Changing the WhatsApp number or message.** WhatsApp is linked twice in `index.html`: the WhatsApp button next to the email in Contact, and the WhatsApp link at the bottom of the menu. Both are `https://wa.me/918799642531?text=…`: the number with its country code and no `+` or spaces, then the message that opens ready to send, with spaces written as `%20` and commas as `%2C`. Change both links.
+
 **Adding a project.** Mandli is the featured first project (`<article class="stop mandli" data-portal>`). The other projects are the `<article class="stop project">` stops after it: copy one, and alternate the card between left and right (`data-at="-0.17,0"` / `data-at="0.17,0"`, with the line on the other side: `data-line="0.3,0.27"` / `data-line="-0.3,0.27"`). Then update the `01 / 05` counters on every project, including Mandli's, and the "5 projects" line under "Selected work".
 
 **Changing the pace.** A stop's `data-gap` sets how long the flight to it is, and `data-hold` how long the camera stays. The glide itself is in `main.js` (search for `The loop`): the `5.5` there is how quickly the camera catches up with the scroll position.
@@ -65,6 +72,19 @@ All the text is see-through, so the line can be seen passing behind it; only the
 
 **The car.** The line ends in a ribbon under the faceted supercar in Contact (the `<svg class="car">`). Its `data-line-end="x,y"` marks where the ribbon starts, as fractions of the drawing: the line is ended exactly there, and the car grows out of the dot from there. Don't give the car's piece a `data-depth`: it has to stay in the same plane as the end of the line, or the two drift apart as the camera moves. The smoke from its back tyre is the `car-puff` groups at the end of the drawing; how they roll back and rise is `@keyframes puff` in `style.css`. The car at the top of the page is a copy `main.js` makes of this drawing, so changes to it show in both places. It parks with its nose under the start of your name; on screens where that would touch the words or the header, it parks at the nearest clear place along the line, a little smaller if it has to.
 
-## Before you publish
+## Visitor stats
 
-**Link previews.** Once you have a domain, change the `og:image` value in `index.html` to the full address, e.g. `https://your-domain/assets/img/og.jpg`. WhatsApp and LinkedIn ignore relative paths.
+Visits are counted by Vercel Web Analytics (Vercel dashboard → the project → **Analytics**). It needs no npm package: two small `<script>` tags in the `<head>` of `index.html` load Vercel's script from `/_vercel/insights/script.js`. Vercel serves that only on the live site, so when you open the page on your computer the browser reports it as not found; that is expected.
+
+## The site's address
+
+The live address (now `https://rathinbaraiya.vercel.app/`) is written out in full in four places, because link previews (WhatsApp, LinkedIn) and search engines need full addresses:
+
+1. the top of `index.html`: the `canonical` link and the `og:url` / `og:image` tags
+2. the structured data at the end of `<head>` in `index.html` (`url` and `image`)
+3. `robots.txt` (the `Sitemap:` line)
+4. `sitemap.xml` (`<loc>`)
+
+If the address changes (a new Vercel name or your own domain), change it in all four, then update `<lastmod>` in `sitemap.xml`.
+
+**Changing the link-preview picture.** Replace `assets/img/og.jpg` with another 1200×630 image. WhatsApp keeps old previews for a while; LinkedIn's Post Inspector can refresh them.

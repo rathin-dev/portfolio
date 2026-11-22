@@ -8,19 +8,53 @@
   <meta name="theme-color" content="#ECEAE2">
   <meta name="color-scheme" content="light">
 
+  <!-- The site's address is written out in full in four places: here (link previews
+       and search engines need it), in the structured data at the end of <head>, and in
+       robots.txt and sitemap.xml. If the address changes, change it in all four. -->
+  <link rel="canonical" href="https://rathinbaraiya.vercel.app/">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://rathinbaraiya.vercel.app/">
+  <meta property="og:site_name" content="Rathin Baraiya">
   <meta property="og:title" content="Rathin Baraiya · Web &amp; App Developer">
   <meta property="og:description" content="Websites, online shops and Android apps for small businesses, community groups and non-profits in Gujarat and beyond.">
-  <!-- Link previews need a full address: once the site has a domain, change this to https://your-domain/assets/img/og.jpg -->
-  <meta property="og:image" content="assets/img/og.jpg">
+  <meta property="og:image" content="https://rathinbaraiya.vercel.app/assets/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Rathin Baraiya, web and app developer in Gujarat, India">
   <meta name="twitter:card" content="summary_large_image">
 
+  <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
   <script>document.documentElement.classList.add('js');</script>
+  <!-- Vercel Web Analytics: counts visits, without cookies. The script is served by
+       Vercel, so it only loads on the live site (not when the page is opened locally). -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Who this site is about, for search engines (only facts that are on the page) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Rathin Baraiya",
+    "url": "https://rathinbaraiya.vercel.app/",
+    "image": "https://rathinbaraiya.vercel.app/assets/img/rathin-photo.webp",
+    "jobTitle": "Web & App Developer",
+    "description": "Freelance web and app developer in Gujarat, India, building websites, online shops and Android apps for small businesses, community groups and non-profits.",
+    "email": "mailto:rathin2308@gmail.com",
+    "address": { "@type": "PostalAddress", "addressRegion": "Gujarat", "addressCountry": "IN" },
+    "alumniOf": { "@type": "CollegeOrUniversity", "name": "Government Engineering College, Gandhinagar" },
+    "knowsAbout": ["Websites", "Online shops", "Android apps", "WordPress", "WooCommerce", "Next.js", "Flutter", "SEO"],
+    "sameAs": ["https://github.com/rathin-dev", "https://www.linkedin.com/in/rathin-baraiya-4b6459234/"]
+  }
+  </script>
 </head>
 <body>
   <a class="skip mono" href="#about">Skip to content</a>
@@ -44,6 +78,7 @@
       <a class="mono" href="https://www.linkedin.com/in/rathin-baraiya-4b6459234/" target="_blank" rel="noopener">LinkedIn</a>
       <a class="mono" href="https://github.com/rathin-dev" target="_blank" rel="noopener">GitHub</a>
       <a class="mono" href="mailto:rathin2308@gmail.com">Email</a>
+      <a class="mono" href="https://wa.me/918799642531?text=Hi%20Rathin%2C%20I%20saw%20your%20portfolio%20and%20I'd%20like%20to%20talk%20about%20a%20project." target="_blank" rel="noopener">WhatsApp</a>
     </p>
   </nav>
 
@@ -402,6 +437,7 @@
       <div class="piece contact-email-row" data-at="0,0.09" data-depth="-0.08" data-drift="0,0.1">
         <a class="contact-email" href="mailto:rathin2308@gmail.com?subject=Project%20enquiry">rathin2308@gmail.com</a>
         <button class="copy-btn mono" type="button" data-copy="rathin2308@gmail.com"><span data-copy-label>Copy email</span></button>
+        <a class="wa-btn mono" href="https://wa.me/918799642531?text=Hi%20Rathin%2C%20I%20saw%20your%20portfolio%20and%20I'd%20like%20to%20talk%20about%20a%20project." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">WhatsApp<svg class="arrow" viewBox="0 0 34 12" aria-hidden="true"><path d="M0 6h32M27 1l5 5-5 5"/></svg></a>
       </div>
       <p class="piece contact-note" data-at="0,0.25" data-depth="-0.12" data-drift="0,0.1">Tell me a little about your project: a website, an app, or an idea you are not sure how to start.</p>
       <footer class="piece contact-foot" data-at="0,0.41" data-depth="-0.2" data-drift="0,0.1">
